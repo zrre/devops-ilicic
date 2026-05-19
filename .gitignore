@@ -1,0 +1,9 @@
+.terragrunt-cache/
+.terragrunt-cache/
+**/.terragrunt-cache/
+.terraform/
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json

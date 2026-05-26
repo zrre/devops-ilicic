@@ -3,15 +3,15 @@ locals {
 }
 
 terraform {
-  source = "../../modules/bootstrap"
+  source = "../../../modules/bootstrap"
 }
 
 inputs = {
   resource_group_name = local.env.locals.backend_resource_group_name
   location            = local.env.locals.location
 
-  storage_account_name   = local.env.locals.tfstate_storage_account_name
-  storage_container_name = local.env.locals.tfstate_container_name
+  storage_account_name   = local.env.locals.backend_storage_account_name
+  storage_container_name = local.env.locals.backend_container_name
 
   tags = local.env.locals.tags
 }

@@ -7,15 +7,15 @@ remote_state {
 
   config = {
     resource_group_name  = local.env.locals.backend_resource_group_name
-    storage_account_name = local.env.locals.tfstate_storage_account_name
-    container_name       = local.env.locals.tfstate_container_name
-    key                  = "dev/resource-group.tfstate"
+    storage_account_name = local.env.locals.backend_storage_account_name
+    container_name       = local.env.locals.backend_container_name
+    key                  = "workload/resource-group.tfstate"
     use_azuread_auth     = true
   }
 }
 
 terraform {
-  source = "../../../modules/resource-group"
+  source = "../../../../modules/resource-group"
 }
 
 inputs = {

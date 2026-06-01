@@ -4,10 +4,10 @@ on:
   pull_request:
     branches:
       - develop
-    paths:
-      - "live/**"
-      - "modules/**"
-      - ".github/workflows/terragrunt-plan-test.yml"
+    # paths:
+    #   - "live/**"
+    #   - "modules/**"
+    #   - ".github/workflows/terragrunt-plan-test.yml"
 
 permissions:
   contents: read

@@ -38,25 +38,25 @@ remote_state {
     resource_group_name  = local.env.locals.backend_resource_group_name
     storage_account_name = local.env.locals.backend_storage_account_name
     container_name       = local.env.locals.backend_container_name
-    key                  = "workload/test-vm.tfstate"
+    key                  = "prod/test-vm.tfstate"
     use_azuread_auth     = true
   }
 }
 
 terraform {
-  source = "../../../../modules/test-vm"
+  source = "../../../modules/test-vm"
 }
 
 inputs = {
-  resource_group_name = local.env.locals.workload_resource_group_name
+  resource_group_name = "rg-ilicic-devops-prod"
   location            = local.env.locals.location
 
-  vm_name              = local.env.locals.test_vm_name
-  vm_size              = local.env.locals.test_vm_size
-  admin_username       = local.env.locals.test_vm_admin_user
+  vm_name              = "vm-ilicic-test-prod"
+  vm_size              = "Standard_B2s_v2"
+  admin_username       = "azureuser"
   admin_ssh_public_key = file("~/.ssh/id_ed25519.pub")
 
-  subnet_id = dependency.network.outputs.subnet_ids["mgmt"]
+  subnet_id            = dependency.network.outputs.subnet_ids["mgmt"]
 
   acr_id             = dependency.private_services.outputs.acr_id
   acr_login_server   = dependency.private_services.outputs.acr_login_server

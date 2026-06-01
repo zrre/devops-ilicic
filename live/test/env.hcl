@@ -1,5 +1,5 @@
 locals {
-  environment = "prod"
+  environment = "test"
   location    = "westeurope"
 
   backend_resource_group_name  = "rg-ilicic-devops-tfstate"
@@ -8,7 +8,7 @@ locals {
 
   tags = {
     owner       = "znebrigic"
-    environment = "prod"
+    environment = "test"
     managed_by  = "terragrunt"
     project     = "ilicic-devops"
   }

@@ -1,13 +1,13 @@
-name: Terragrunt plan test
+name: Terragrunt plan prod
 
 on:
   pull_request:
     branches:
-      - develop
+      - main
     # paths:
     #   - "live/**"
     #   - "modules/**"
-    #   - ".github/workflows/terragrunt-plan-test.yml"
+    #   - ".github/workflows/terragrunt-plan-prod.yml"
 
 permissions:
   contents: read
@@ -21,7 +21,7 @@ env:
   ARM_USE_AZUREAD: "true"
 
 jobs:
-  plan-test:
+  plan-prod:
     runs-on: [self-hosted, macOS, ARM64]
 
     steps:
@@ -40,9 +40,9 @@ jobs:
             }
 
       - name: Install OpenTofu
-        uses: opentofu/setup-opentofu@v1
+        uses: opentofu/setup-opentofu@v2
         with:
-          tofu_version: "1.12.1"
+          tofu_version: "1.10.0"
           tofu_wrapper: false
 
       - name: Install Terragrunt
@@ -61,12 +61,12 @@ jobs:
           az version
 
       - name: Terragrunt init
-        working-directory: live/test
+        working-directory: live/prod
         run: terragrunt run --all -- init -reconfigure
 
       - name: Terragrunt plan
         id: plan
-        working-directory: live/test
+        working-directory: live/prod
         shell: bash
         run: |
           set +e
@@ -81,10 +81,10 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const plan = fs.readFileSync('live/test/plan.txt', 'utf8');
+            const plan = fs.readFileSync('live/prod/plan.txt', 'utf8');
             const maxLen = 60000;
 
-            const body = `## Terragrunt plan: test
+            const body = `## Terragrunt plan: prod
 
             Exit code: ${{ steps.plan.outputs.exit_code }}
 

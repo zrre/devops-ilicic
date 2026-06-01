@@ -1,0 +1,38 @@
+name: Branch policy
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate-source-branch:
+    runs-on: [self-hosted, macOS, ARM64]
+
+    steps:
+      - name: Validate source branch
+        shell: bash
+        run: |
+          BASE="${{ github.base_ref }}"
+          HEAD="${{ github.head_ref }}"
+
+          echo "Base branch: $BASE"
+          echo "Head branch: $HEAD"
+
+          if [ "$BASE" = "develop" ]; then
+            if [[ "$HEAD" != feature/* ]]; then
+              echo "Only feature/* branches can be merged into develop."
+              exit 1
+            fi
+          fi
+
+          if [ "$BASE" = "main" ]; then
+            if [ "$HEAD" != "develop" ]; then
+              echo "Only develop can be merged into main."
+              exit 1
+            fi
+          fi

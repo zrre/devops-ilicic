@@ -42,7 +42,7 @@ jobs:
       - name: Install OpenTofu
         uses: opentofu/setup-opentofu@v1
         with:
-          tofu_version: "1.10.0"
+          tofu_version: "1.12.1"
 
       - name: Install Terragrunt
         shell: bash

@@ -28,25 +28,25 @@ remote_state {
     resource_group_name  = local.env.locals.backend_resource_group_name
     storage_account_name = local.env.locals.backend_storage_account_name
     container_name       = local.env.locals.backend_container_name
-    key                  = "workload/private-services.tfstate"
+    key                  = "prod/private-services.tfstate"
     use_azuread_auth     = true
   }
 }
 
 terraform {
-  source = "../../../../modules/private-services"
+  source = "../../../modules/private-services"
 }
 
 inputs = {
-  resource_group_name = local.env.locals.workload_resource_group_name
+  resource_group_name = "rg-ilicic-devops-prod"
   location            = local.env.locals.location
 
-  vnet_id                     = dependency.network.outputs.vnet_id
-  private_endpoint_subnet_id  = dependency.network.outputs.subnet_ids["private_endpoints"]
+  vnet_id                    = dependency.network.outputs.vnet_id
+  private_endpoint_subnet_id = dependency.network.outputs.subnet_ids["private_endpoints"]
 
-  acr_name             = local.env.locals.acr_name
-  storage_account_name = local.env.locals.app_storage_name
-  key_vault_name       = local.env.locals.key_vault_name
+  acr_name             = "acrilicicdevopsprod"
+  storage_account_name = "stilicicappdevopsprod"
+  key_vault_name       = "kv-ilicic-devops-prod"
 
   tags = local.env.locals.tags
 }

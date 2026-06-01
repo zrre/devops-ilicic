@@ -1,57 +1,62 @@
 locals {
-  environment = "dev"
-  location    = "westeurope"
+  env = read_terragrunt_config(find_in_parent_folders("env.hcl"))
+}
 
-  acr_name             = "acrilicicdevopsdev"
-  app_storage_name     = "stilicicappdevopsdev"
-  key_vault_name       = "kv-ilicic-devops-dev"
+dependencies {
+  paths = ["../resource-group"]
+}
 
-  test_vm_name         = "vm-ilicic-test-dev"
-  test_vm_admin_user   = "azureuser"
-  test_vm_size         = "Standard_B2s_v2"
+remote_state {
+  backend = "azurerm"
 
-  backend_resource_group_name  = "rg-ilicic-devops-tfstate-dev"
-  workload_resource_group_name = "rg-ilicic-devops-dev"
+  config = {
+    resource_group_name  = local.env.locals.backend_resource_group_name
+    storage_account_name = local.env.locals.backend_storage_account_name
+    container_name       = local.env.locals.backend_container_name
+    key                  = "prod/network.tfstate"
+    use_azuread_auth     = true
+  }
+}
 
-  backend_storage_account_name = "stilicicdevopstfdev"
-  backend_container_name       = "tfstate"
+terraform {
+  source = "../../../modules/network"
+}
 
-  allowed_public_ips = [
-    "77.46.241.175",
-    "79.175.106.38",
-    "178.221.121.217"
-  ]
-  vnet_name     = "vnet-ilicic-devops-dev"
-  address_space = ["10.10.0.0/16"]
+inputs = {
+  resource_group_name = "rg-ilicic-devops-prod"
+  location            = local.env.locals.location
+
+  vnet_name     = "vnet-ilicic-devops-prod"
+  address_space = ["10.20.0.0/16"]
 
   subnets = {
     app = {
-      name              = "snet-app-dev"
-      address_prefixes  = ["10.10.1.0/24"]
+      name              = "snet-app-prod"
+      address_prefixes  = ["10.20.1.0/24"]
       service_endpoints = ["Microsoft.Storage"]
     }
 
     data = {
-      name              = "snet-data-dev"
-      address_prefixes  = ["10.10.2.0/24"]
+      name              = "snet-data-prod"
+      address_prefixes  = ["10.20.2.0/24"]
       service_endpoints = ["Microsoft.Storage"]
     }
 
     mgmt = {
-      name              = "snet-mgmt-dev"
-      address_prefixes  = ["10.10.3.0/24"]
+      name              = "snet-mgmt-prod"
+      address_prefixes  = ["10.20.3.0/24"]
       service_endpoints = ["Microsoft.Storage"]
     }
 
     private_endpoints = {
-      name              = "snet-private-endpoints-dev"
-      address_prefixes  = ["10.10.4.0/24"]
+      name              = "snet-private-endpoints-prod"
+      address_prefixes  = ["10.20.4.0/24"]
       service_endpoints = []
     }
 
     aks = {
-      name              = "snet-aks-dev"
-      address_prefixes  = ["10.10.10.0/23"]
+      name              = "snet-aks-prod"
+      address_prefixes  = ["10.20.10.0/23"]
       service_endpoints = []
     }
   }
@@ -66,8 +71,8 @@ locals {
         protocol                   = "Tcp"
         source_port_range          = "*"
         destination_port_range     = "443"
-        source_address_prefix      = "10.10.100.0/24"
-        destination_address_prefix = "10.10.1.0/24"
+        source_address_prefix      = "10.20.100.0/24"
+        destination_address_prefix = "10.20.1.0/24"
       },
       {
         name                       = "deny-internet-inbound"
@@ -91,8 +96,8 @@ locals {
         protocol                   = "Tcp"
         source_port_range          = "*"
         destination_port_range     = "1433"
-        source_address_prefix      = "10.10.1.0/24"
-        destination_address_prefix = "10.10.2.0/24"
+        source_address_prefix      = "10.20.1.0/24"
+        destination_address_prefix = "10.20.2.0/24"
       },
       {
         name                       = "deny-internet-inbound"
@@ -116,8 +121,12 @@ locals {
         protocol                   = "Tcp"
         source_port_range          = "*"
         destination_port_range     = "22"
-        source_address_prefixes    = local.allowed_public_ips
-        destination_address_prefix = "10.10.3.0/24"
+        source_address_prefixes    = [
+          "77.46.241.175",
+          "79.175.106.38",
+          "178.221.121.217"
+        ]
+        destination_address_prefix = "10.20.3.0/24"
       },
       {
         name                       = "deny-internet-inbound"
@@ -133,16 +142,8 @@ locals {
     ]
 
     private_endpoints = []
-
-    aks = []
+    aks               = []
   }
 
-  tags = {
-    owner       = "znebrigic"
-    environment = "dev"
-    managed_by  = "terragrunt"
-    project     = "ilicic-devops"
-  }
- 
+  tags = local.env.locals.tags
 }
-

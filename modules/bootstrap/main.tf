@@ -18,6 +18,15 @@ resource "azurerm_storage_account" "tfstate" {
   tags = var.tags
 }
 
+resource "azurerm_storage_account_network_rules" "tfstate" {
+  storage_account_id = azurerm_storage_account.tfstate.id
+
+  default_action = "Deny"
+  bypass         = ["AzureServices"]
+
+  ip_rules = var.allowed_public_ips
+}
+
 resource "azurerm_storage_container" "tfstate" {
   name                  = var.storage_container_name
   storage_account_id    = azurerm_storage_account.tfstate.id

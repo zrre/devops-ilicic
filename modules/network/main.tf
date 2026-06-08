@@ -36,18 +36,18 @@ locals {
   nsg_rules_flat = flatten([
     for subnet_key, rules in var.nsg_rules : [
       for rule in rules : {
-        subnet_key                    = subnet_key
-        name                          = rule.name
-        priority                      = rule.priority
-        direction                     = rule.direction
-        access                        = rule.access
-        protocol                      = rule.protocol
-        source_port_range             = rule.source_port_range
-        destination_port_range        = rule.destination_port_range
-        source_address_prefix         = try(rule.source_address_prefix, null)
-        source_address_prefixes       = try(rule.source_address_prefixes, null)
-        destination_address_prefix    = try(rule.destination_address_prefix, null)
-        destination_address_prefixes  = try(rule.destination_address_prefixes, null)
+        subnet_key                   = subnet_key
+        name                         = rule.name
+        priority                     = rule.priority
+        direction                    = rule.direction
+        access                       = rule.access
+        protocol                     = rule.protocol
+        source_port_range            = rule.source_port_range
+        destination_port_range       = rule.destination_port_range
+        source_address_prefix        = try(rule.source_address_prefix, null)
+        source_address_prefixes      = try(rule.source_address_prefixes, null)
+        destination_address_prefix   = try(rule.destination_address_prefix, null)
+        destination_address_prefixes = try(rule.destination_address_prefixes, null)
       }
     ]
   ])
@@ -59,13 +59,13 @@ resource "azurerm_network_security_rule" "this" {
     "${rule.subnet_key}-${rule.name}" => rule
   }
 
-  name                         = each.value.name
-  priority                     = each.value.priority
-  direction                    = each.value.direction
-  access                       = each.value.access
-  protocol                     = each.value.protocol
-  source_port_range            = each.value.source_port_range
-  destination_port_range       = each.value.destination_port_range
+  name                   = each.value.name
+  priority               = each.value.priority
+  direction              = each.value.direction
+  access                 = each.value.access
+  protocol               = each.value.protocol
+  source_port_range      = each.value.source_port_range
+  destination_port_range = each.value.destination_port_range
 
   source_address_prefix        = each.value.source_address_prefix
   source_address_prefixes      = each.value.source_address_prefixes

@@ -1,3 +1,7 @@
+include "root" {
+  path = find_in_parent_folders("root.hcl")
+}
+
 locals {
   env = read_terragrunt_config(find_in_parent_folders("env.hcl"))
 }
@@ -6,17 +10,6 @@ dependencies {
   paths = ["../resource-group"]
 }
 
-remote_state {
-  backend = "azurerm"
-
-  config = {
-    resource_group_name  = local.env.locals.backend_resource_group_name
-    storage_account_name = local.env.locals.backend_storage_account_name
-    container_name       = local.env.locals.backend_container_name
-    key                  = "prod/network.tfstate"
-    use_azuread_auth     = true
-  }
-}
 
 terraform {
   source = "../../../modules/network"
@@ -114,14 +107,14 @@ inputs = {
 
     mgmt = [
       {
-        name                       = "allow-ssh-from-public-ips"
-        priority                   = 100
-        direction                  = "Inbound"
-        access                     = "Allow"
-        protocol                   = "Tcp"
-        source_port_range          = "*"
-        destination_port_range     = "22"
-        source_address_prefixes    = [
+        name                   = "allow-ssh-from-public-ips"
+        priority               = 100
+        direction              = "Inbound"
+        access                 = "Allow"
+        protocol               = "Tcp"
+        source_port_range      = "*"
+        destination_port_range = "22"
+        source_address_prefixes = [
           "77.46.241.175",
           "79.175.106.38",
           "178.221.121.217"

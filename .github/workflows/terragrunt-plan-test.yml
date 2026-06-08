@@ -64,6 +64,22 @@ jobs:
         working-directory: live/test
         run: terragrunt run --all -- init -reconfigure
 
+      - name: Terragrunt HCL format check
+        working-directory: .
+        run: terragrunt hcl fmt --check
+
+      - name: Terragrunt HCL validate
+        working-directory: .
+        run: terragrunt hcl validate
+
+      - name: OpenTofu format check
+        working-directory: .
+        run: tofu fmt -check -recursive
+
+      - name: OpenTofu validate test
+        working-directory: live/test
+        run: terragrunt run --all -- validate
+      
       - name: Terragrunt plan
         id: plan
         working-directory: live/test

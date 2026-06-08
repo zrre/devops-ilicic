@@ -80,48 +80,60 @@ jobs:
         working-directory: live/prod
         run: terragrunt run --all -- validate
 
-      - name: Terragrunt plan
+      - name: Plan prod
         id: plan
         working-directory: live/prod
         shell: bash
         run: |
           set +e
           terragrunt run --all plan -no-color > plan.txt 2>&1
-          EXIT_CODE=$?
-          cat plan.txt
-          echo "exit_code=$EXIT_CODE" >> "$GITHUB_OUTPUT"
-          exit 0
+          PLAN_EXIT_CODE=$?
+          set -e
 
-      - name: Comment plan on PR
+          cat plan.txt
+          echo "exit_code=${PLAN_EXIT_CODE}" >> "$GITHUB_OUTPUT"
+
+      - name: Format plan comment
+        if: always()
+        shell: bash
+        run: |
+          .github/scripts/format-terragrunt-plan.sh prod live/prod/plan.txt plan-comment.md
+          cat plan-comment.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comment PR with plan
+        if: always()
         uses: actions/github-script@v7
         with:
           script: |
-            const fs = require('fs');
-            const plan = fs.readFileSync('live/prod/plan.txt', 'utf8');
-            const maxLen = 60000;
+            const fs = require("fs");
+            const body = fs.readFileSync("plan-comment.md", "utf8");
 
-            const body = `## Terragrunt plan: prod
-
-            Exit code: ${{ steps.plan.outputs.exit_code }}
-
-            <details>
-            <summary>Show plan</summary>
-
-            \`\`\`
-            ${plan.slice(0, maxLen)}
-            \`\`\`
-
-            </details>
-
-            ${plan.length > maxLen ? '\nPlan output was truncated.' : ''}
-            `;
-
-            await github.rest.issues.createComment({
-              issue_number: context.issue.number,
+            const comments = await github.rest.issues.listComments({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body
+              issue_number: context.issue.number,
             });
+
+            const marker = "## Terragrunt plan: `prod`";
+            const existing = comments.data.find(comment =>
+              comment.user.type === "Bot" && comment.body.includes(marker)
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
 
       - name: Fail if plan failed
         if: steps.plan.outputs.exit_code != '0'

@@ -49,7 +49,7 @@ inputs = {
   admin_username       = "azureuser"
   admin_ssh_public_key = file("~/.ssh/id_ed25519.pub")
 
-  subnet_id            = dependency.network.outputs.subnet_ids["mgmt"]
+  subnet_id = dependency.network.outputs.subnet_ids["mgmt"]
 
   acr_id             = dependency.private_services.outputs.acr_id
   acr_login_server   = dependency.private_services.outputs.acr_login_server

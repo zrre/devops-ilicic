@@ -107,14 +107,14 @@ inputs = {
 
     mgmt = [
       {
-        name                       = "allow-ssh-from-public-ips"
-        priority                   = 100
-        direction                  = "Inbound"
-        access                     = "Allow"
-        protocol                   = "Tcp"
-        source_port_range          = "*"
-        destination_port_range     = "22"
-        source_address_prefixes    = [
+        name                   = "allow-ssh-from-public-ips"
+        priority               = 100
+        direction              = "Inbound"
+        access                 = "Allow"
+        protocol               = "Tcp"
+        source_port_range      = "*"
+        destination_port_range = "22"
+        source_address_prefixes = [
           "77.46.241.175",
           "79.175.106.38",
           "178.221.121.217"

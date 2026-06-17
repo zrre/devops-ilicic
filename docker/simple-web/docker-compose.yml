@@ -6,5 +6,14 @@ services:
     image: simple-web:local
     container_name: simple-web
     ports:
-      - "8080:80"
+      - "8080:8080"
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/cache/nginx
+      - /var/run
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     restart: unless-stopped

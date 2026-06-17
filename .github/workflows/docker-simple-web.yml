@@ -35,6 +35,17 @@ jobs:
         working-directory: docker/simple-web
         run: docker compose up -d
 
+      - name: Security checks
+        working-directory: docker/simple-web
+        run: |
+          docker compose exec -T simple-web id
+          if docker compose exec -T simple-web sh -c "touch /test-file"; then
+            echo "Container filesystem is writable, expected read-only"
+            exit 1
+          else
+            echo "Readonly filesystem check passed"
+          fi
+
       - name: Smoke test
         run: |
           sleep 3

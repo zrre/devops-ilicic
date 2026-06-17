@@ -72,17 +72,28 @@ jobs:
         run: |
           az acr login --name "${{ steps.meta.outputs.acr_name }}"
 
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
 
       - name: Build and push image
-        uses: docker/build-push-action@v6
-        with:
-          context: ${{ env.DOCKER_CONTEXT }}
-          file: ${{ env.DOCKERFILE }}
-          platforms: linux/amd64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
+        shell: bash
+        run: |
+          IFS=',' read -ra TAGS <<< "${{ steps.meta.outputs.tags }}"
+
+          PRIMARY_TAG="${TAGS[0]}"
+
+          docker build \
+            -f "${DOCKERFILE}" \
+            -t "${PRIMARY_TAG}" \
+            "${DOCKER_CONTEXT}"
+
+          for tag in "${TAGS[@]}"; do
+            if [ "$tag" != "$PRIMARY_TAG" ]; then
+              docker tag "$PRIMARY_TAG" "$tag"
+            fi
+          done
+
+          for tag in "${TAGS[@]}"; do
+            docker push "$tag"
+          done
 
       - name: Publish summary
         run: |

@@ -31,6 +31,86 @@ jobs:
         working-directory: docker/simple-web
         run: docker compose build --no-cache
 
+      - name: Install Trivy
+        shell: bash
+        run: |
+          if ! command -v trivy >/dev/null 2>&1; then
+            brew install trivy
+          fi
+
+      - name: Install Grype
+        shell: bash
+        run: |
+          if ! command -v grype >/dev/null 2>&1; then
+            brew install grype
+          fi
+
+      - name: Trivy scan - report all HIGH/CRITICAL
+        shell: bash
+        run: |
+          trivy image \
+            --severity HIGH,CRITICAL \
+            --format table \
+            --exit-code 0 \
+            simple-web:local | tee trivy-report.txt
+
+      - name: Trivy scan - fail on fixable HIGH/CRITICAL
+        shell: bash
+        run: |
+          trivy image \
+            --scanners vuln \
+            --severity HIGH,CRITICAL \
+            --ignore-unfixed \
+            --exit-code 1 \
+            simple-web:local
+
+      - name: Grype scan - report all HIGH/CRITICAL
+        shell: bash
+        run: |
+          grype simple-web:local \
+            --fail-on negligible \
+            -o table | tee grype-report.txt || true
+
+      - name: Grype scan - fail on fixable HIGH/CRITICAL
+        shell: bash
+        run: |
+          grype simple-web:local \
+            --only-fixed \
+            --fail-on high    
+
+      - name: Security scan summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Container security scan summary"
+            echo
+            echo "| Scanner | Policy | Result |"
+            echo "|---|---|---|"
+            echo "| Trivy | Fail on fixable HIGH/CRITICAL vulnerabilities | Completed |"
+            echo "| Grype | Fail on fixable HIGH/CRITICAL vulnerabilities | Completed |"
+            echo
+            echo "### Trivy report"
+            echo
+            echo '```text'
+            if [ -f trivy-report.txt ]; then
+              cat trivy-report.txt
+            else
+              echo "No Trivy report file found."
+            fi
+            echo '```'
+            echo
+            echo "### Grype report"
+            echo
+            echo '```text'
+            if [ -f grype-report.txt ]; then
+              cat grype-report.txt
+            else
+              echo "No Grype report file found."
+            fi
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Run container
         working-directory: docker/simple-web
         run: docker compose up -d
@@ -55,6 +135,40 @@ jobs:
         run: |
           docker images simple-web:local
       
+
+      - name: Security scan summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo "## Container security scan summary"
+            echo
+            echo "| Scanner | Policy | Result |"
+            echo "|---|---|---|"
+            echo "| Trivy | HIGH/CRITICAL with available fix fail the PR | Completed |"
+            echo "| Grype | HIGH/CRITICAL with available fix fail the PR | Completed |"
+            echo
+            echo "### Trivy report"
+            echo
+            echo '```text'
+            if [ -f trivy-report.txt ]; then
+              cat trivy-report.txt
+            else
+              echo "No Trivy report file found."
+            fi
+            echo '```'
+            echo
+            echo "### Grype report"
+            echo
+            echo '```text'
+            if [ -f grype-report.txt ]; then
+              cat grype-report.txt
+            else
+              echo "No Grype report file found."
+            fi
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Docker build summary
         if: always()
         run: |

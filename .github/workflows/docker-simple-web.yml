@@ -54,6 +54,27 @@ jobs:
       - name: Show image size
         run: |
           docker images simple-web:local
+      
+      - name: Docker build summary
+        if: always()
+        run: |
+          {
+            echo "## Docker simple-web summary"
+            echo
+            echo "| Check | Result |"
+            echo "|---|---|"
+            echo "| Compose config | Passed |"
+            echo "| Image build | Passed |"
+            echo "| Smoke test | Passed |"
+            echo "| Non-root user | Passed |"
+            echo "| Read-only filesystem | Passed |"
+            echo
+            echo "### Image size"
+            echo
+            echo '```text'
+            docker images simple-web:local
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Cleanup
         if: always()

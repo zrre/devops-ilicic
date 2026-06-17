@@ -8,3 +8,5 @@
 *.tfvars
 *.tfvars.json
 git_runner
+.DS_Store
+**/.DS_Store

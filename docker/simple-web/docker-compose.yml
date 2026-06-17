@@ -1,0 +1,10 @@
+services:
+  simple-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: simple-web:local
+    container_name: simple-web
+    ports:
+      - "8080:80"
+    restart: unless-stopped

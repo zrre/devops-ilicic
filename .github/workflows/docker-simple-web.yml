@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
 
 jobs:
   docker-build:
@@ -45,16 +46,72 @@ jobs:
             brew install grype
           fi
 
-      - name: Trivy scan - report all HIGH/CRITICAL
+      - name: Trivy scan - JSON report
         shell: bash
         run: |
           trivy image \
-            --severity HIGH,CRITICAL \
-            --format table \
+            --scanners vuln \
+            --severity LOW,MEDIUM,HIGH,CRITICAL \
+            --format json \
             --exit-code 0 \
-            simple-web:local | tee trivy-report.txt
+            --output trivy-report.json \
+            simple-web:local
 
-      - name: Trivy scan - fail on fixable HIGH/CRITICAL
+      - name: Grype scan - JSON report
+        shell: bash
+        run: |
+          grype simple-web:local \
+            -o json > grype-report.json || true
+
+      - name: Generate security summary
+        if: always()
+        shell: bash
+        run: |
+          python3 .github/scripts/container-security-summary.py
+          cat security-summary.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Comment PR with security summary
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("fs");
+
+            if (!fs.existsSync("security-summary.md")) {
+              console.log("security-summary.md not found, skipping PR comment.");
+              return;
+            }
+
+            const body = fs.readFileSync("security-summary.md", "utf8");
+            const marker = "# Container security scan summary";
+
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existing = comments.data.find(comment =>
+              comment.user.type === "Bot" && comment.body.includes(marker)
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+      - name: Trivy scan - fail on fixable HIGH and CRITICAL
         shell: bash
         run: |
           trivy image \
@@ -64,52 +121,12 @@ jobs:
             --exit-code 1 \
             simple-web:local
 
-      - name: Grype scan - report all HIGH/CRITICAL
-        shell: bash
-        run: |
-          grype simple-web:local \
-            --fail-on negligible \
-            -o table | tee grype-report.txt || true
-
-      - name: Grype scan - fail on fixable HIGH/CRITICAL
+      - name: Grype scan - fail on fixable HIGH and CRITICAL
         shell: bash
         run: |
           grype simple-web:local \
             --only-fixed \
-            --fail-on high    
-
-      - name: Security scan summary
-        if: always()
-        shell: bash
-        run: |
-          {
-            echo "## Container security scan summary"
-            echo
-            echo "| Scanner | Policy | Result |"
-            echo "|---|---|---|"
-            echo "| Trivy | Fail on fixable HIGH/CRITICAL vulnerabilities | Completed |"
-            echo "| Grype | Fail on fixable HIGH/CRITICAL vulnerabilities | Completed |"
-            echo
-            echo "### Trivy report"
-            echo
-            echo '```text'
-            if [ -f trivy-report.txt ]; then
-              cat trivy-report.txt
-            else
-              echo "No Trivy report file found."
-            fi
-            echo '```'
-            echo
-            echo "### Grype report"
-            echo
-            echo '```text'
-            if [ -f grype-report.txt ]; then
-              cat grype-report.txt
-            else
-              echo "No Grype report file found."
-            fi
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
+            --fail-on high
 
       - name: Run container
         working-directory: docker/simple-web
@@ -134,40 +151,6 @@ jobs:
       - name: Show image size
         run: |
           docker images simple-web:local
-      
-
-      - name: Security scan summary
-        if: always()
-        shell: bash
-        run: |
-          {
-            echo "## Container security scan summary"
-            echo
-            echo "| Scanner | Policy | Result |"
-            echo "|---|---|---|"
-            echo "| Trivy | HIGH/CRITICAL with available fix fail the PR | Completed |"
-            echo "| Grype | HIGH/CRITICAL with available fix fail the PR | Completed |"
-            echo
-            echo "### Trivy report"
-            echo
-            echo '```text'
-            if [ -f trivy-report.txt ]; then
-              cat trivy-report.txt
-            else
-              echo "No Trivy report file found."
-            fi
-            echo '```'
-            echo
-            echo "### Grype report"
-            echo
-            echo '```text'
-            if [ -f grype-report.txt ]; then
-              cat grype-report.txt
-            else
-              echo "No Grype report file found."
-            fi
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Docker build summary
         if: always()

@@ -12,7 +12,7 @@ permissions:
 
 env:
   IMAGE_NAME: simple-web
-  DOCKER_CONTEXT: docker/simple-web
+  BUILD_CONTEXT: docker/simple-web
   DOCKERFILE: docker/simple-web/Dockerfile
   ACR_NAME: acrilicicdevops
   ACR_LOGIN_SERVER: acrilicicdevops.azurecr.io
@@ -86,7 +86,7 @@ jobs:
           docker build \
             -f "${DOCKERFILE}" \
             -t "${PRIMARY_TAG}" \
-            "${DOCKER_CONTEXT}"
+            "${BUILD_CONTEXT}"
 
           for tag in "${TAGS[@]}"; do
             if [ "$tag" != "$PRIMARY_TAG" ]; then

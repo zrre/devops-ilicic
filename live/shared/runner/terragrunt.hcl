@@ -34,16 +34,17 @@ inputs = {
   vm_size        = "Standard_B2s_v2"
   admin_username = "azureuser"
 
-  subnet_id             = dependency.network.outputs.subnet_ids["runner"]
-  admin_ssh_public_key  = file("~/.ssh/id_ed25519.pub")
-  github_repo_url       = "https://github.com/zrre/devops-ilicic"
-  github_runner_token   = get_env("TF_VAR_github_runner_token")
+  subnet_id            = dependency.network.outputs.subnet_ids["runner"]
+  admin_ssh_public_key = file("~/.ssh/id_ed25519.pub")
+
+  github_repo_url     = "https://github.com/zrre/devops-ilicic"
+  github_runner_token = get_env("TF_VAR_github_runner_token", "")
 
   github_runner_labels = [
     "azure",
     "linux",
     "x64",
-    "shared"
+    "shared",
   ]
 
   allowed_ssh_public_ips = [
@@ -51,7 +52,7 @@ inputs = {
     "79.175.106.38",
     "178.221.121.217",
     "93.86.182.168",
-    "109.93.112.233"
+    "109.93.112.233",
   ]
 
   tags = merge(local.env.locals.tags, {

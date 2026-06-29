@@ -25,7 +25,7 @@ inputs = {
     runner = {
       name                              = "snet-runner-shared"
       address_prefixes                  = ["10.20.1.0/24"]
-      service_endpoints                 = []
+      service_endpoints                 = ["Microsoft.Storage"]
       private_endpoint_network_policies = "Enabled"
     }
 

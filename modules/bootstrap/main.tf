@@ -24,7 +24,8 @@ resource "azurerm_storage_account_network_rules" "tfstate" {
   default_action = "Deny"
   bypass         = ["AzureServices"]
 
-  ip_rules = var.allowed_public_ips
+  ip_rules                   = var.allowed_public_ips
+  virtual_network_subnet_ids = var.allowed_virtual_network_subnet_ids
 }
 
 resource "azurerm_storage_container" "tfstate" {

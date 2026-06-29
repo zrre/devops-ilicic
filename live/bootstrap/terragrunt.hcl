@@ -17,6 +17,10 @@ inputs = {
     "20.229.81.156",
   ]
 
+  allowed_virtual_network_subnet_ids = [
+    "/subscriptions/d960facb-8e1a-44d3-be23-1c460b7077ee/resourceGroups/rg-ilicic-devops-shared/providers/Microsoft.Network/virtualNetworks/vnet-ilicic-devops-shared/subnets/snet-runner-shared",
+  ]
+
   tags = {
     owner       = "znebrigic"
     environment = "shared"

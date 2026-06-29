@@ -8,6 +8,12 @@ variable "allowed_public_ips" {
   default     = []
 }
 
+variable "allowed_virtual_network_subnet_ids" {
+  description = "Virtual network subnet IDs allowed to access the Terraform state storage account."
+  type        = list(string)
+  default     = []
+}
+
 variable "location" {
   type = string
 }

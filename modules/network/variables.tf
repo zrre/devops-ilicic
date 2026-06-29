@@ -16,9 +16,10 @@ variable "address_space" {
 
 variable "subnets" {
   type = map(object({
-    name              = string
-    address_prefixes  = list(string)
-    service_endpoints = list(string)
+    name                              = string
+    address_prefixes                  = list(string)
+    service_endpoints                 = list(string)
+    private_endpoint_network_policies = optional(string, "Enabled")
   }))
 }
 

@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   validate-source-branch:
-    runs-on: [self-hosted, macOS, ARM64]
+    runs-on: [self-hosted, azure, linux, x64, shared]
 
     steps:
       - name: Validate source branch

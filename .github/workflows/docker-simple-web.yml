@@ -13,7 +13,7 @@ permissions:
 jobs:
   docker-build:
     name: Docker build simple-web
-    runs-on: [self-hosted, macOS, ARM64]
+    runs-on: [self-hosted, azure, linux, x64, shared]
 
     steps:
       - name: Checkout
@@ -36,15 +36,21 @@ jobs:
         shell: bash
         run: |
           if ! command -v trivy >/dev/null 2>&1; then
-            brew install trivy
+            TRIVY_VERSION="$(curl -s https://api.github.com/repos/aquasecurity/trivy/releases/latest | jq -r '.tag_name' | sed 's/^v//')"
+            curl -L -o trivy.tar.gz "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+            tar -xzf trivy.tar.gz trivy
+            sudo mv trivy /usr/local/bin/trivy
+            rm -f trivy.tar.gz
           fi
+          trivy --version
 
       - name: Install Grype
         shell: bash
         run: |
           if ! command -v grype >/dev/null 2>&1; then
-            brew install grype
+            curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sudo sh -s -- -b /usr/local/bin
           fi
+          grype version
 
       - name: Trivy scan - JSON report
         shell: bash

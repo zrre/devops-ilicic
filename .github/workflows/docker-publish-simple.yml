@@ -5,6 +5,7 @@ on:
     branches:
       - develop
       - main
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -13,71 +14,73 @@ env:
   IMAGE_NAME: simple-web
   DOCKER_CONTEXT: docker/simple-web
   DOCKERFILE: docker/simple-web/Dockerfile
+  ACR_NAME: acrilicicdevops
+  ACR_LOGIN_SERVER: acrilicicdevops.azurecr.io
 
 jobs:
   publish:
-    name: Build and push simple-web image
-    runs-on: [self-hosted, macOS, ARM64]
-
-    env:
-      ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
-      ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
-      ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
-      ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+    name: Build and publish simple-web
+    runs-on: [self-hosted, azure, linux, x64, shared]
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Docker version
+        run: |
+          docker version
+          docker compose version
+
       - name: Azure login
         uses: azure/login@v2
         with:
-          creds: >-
-            {
-              "clientId": "${{ vars.AZURE_CLIENT_ID }}",
-              "clientSecret": "${{ secrets.AZURE_CLIENT_SECRET }}",
-              "tenantId": "${{ vars.AZURE_TENANT_ID }}",
-              "subscriptionId": "${{ vars.AZURE_SUBSCRIPTION_ID }}"
-            }
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
 
-      - name: Select ACR and tags
-        id: meta
+      - name: Verify private ACR DNS
+        shell: bash
+        run: |
+          nslookup "${ACR_LOGIN_SERVER}"
+          nslookup "${ACR_NAME}.privatelink.azurecr.io"
+
+      - name: ACR login
+        shell: bash
+        run: |
+          az acr login --name "${ACR_NAME}"
+
+      - name: Prepare image tags
+        id: tags
         shell: bash
         run: |
           SHORT_SHA="${GITHUB_SHA::7}"
 
           if [ "${GITHUB_REF_NAME}" = "develop" ]; then
-            ACR_NAME="acrilicicdevopstest"
-            ACR_LOGIN_SERVER="${ACR_NAME}.azurecr.io"
-            TAGS="${ACR_LOGIN_SERVER}/${IMAGE_NAME}:${SHORT_SHA}"
+            TAGS="${ACR_LOGIN_SERVER}/${IMAGE_NAME}:${SHORT_SHA},${ACR_LOGIN_SERVER}/${IMAGE_NAME}:test"
           elif [ "${GITHUB_REF_NAME}" = "main" ]; then
-            ACR_NAME="acrilicicdevopsprod"
-            ACR_LOGIN_SERVER="${ACR_NAME}.azurecr.io"
             VERSION="$(cat docker/simple-web/VERSION | tr -d '[:space:]')"
 
-            TAGS="${ACR_LOGIN_SERVER}/${IMAGE_NAME}:${VERSION}"
-            TAGS="${TAGS},${ACR_LOGIN_SERVER}/${IMAGE_NAME}:latest"
+            if [ -z "$VERSION" ]; then
+              echo "VERSION file is empty"
+              exit 1
+            fi
+
+            TAGS="${ACR_LOGIN_SERVER}/${IMAGE_NAME}:${VERSION},${ACR_LOGIN_SERVER}/${IMAGE_NAME}:latest"
           else
             echo "Unsupported branch: ${GITHUB_REF_NAME}"
             exit 1
           fi
 
-          echo "acr_name=${ACR_NAME}" >> "$GITHUB_OUTPUT"
-          echo "acr_login_server=${ACR_LOGIN_SERVER}" >> "$GITHUB_OUTPUT"
           echo "tags=${TAGS}" >> "$GITHUB_OUTPUT"
-          echo "short_sha=${SHORT_SHA}" >> "$GITHUB_OUTPUT"
 
-      - name: ACR login
+          echo "Image tags:"
+          echo "$TAGS" | tr ',' '\n'
+
+      - name: Build image
         shell: bash
         run: |
-          az acr login --name "${{ steps.meta.outputs.acr_name }}"
-
-
-      - name: Build and push image
-        shell: bash
-        run: |
-          IFS=',' read -ra TAGS <<< "${{ steps.meta.outputs.tags }}"
-
+          IFS=',' read -ra TAGS <<< "${{ steps.tags.outputs.tags }}"
           PRIMARY_TAG="${TAGS[0]}"
 
           docker build \
@@ -91,21 +94,31 @@ jobs:
             fi
           done
 
+      - name: Push image
+        shell: bash
+        run: |
+          IFS=',' read -ra TAGS <<< "${{ steps.tags.outputs.tags }}"
+
           for tag in "${TAGS[@]}"; do
             docker push "$tag"
           done
 
       - name: Publish summary
+        if: always()
+        shell: bash
         run: |
           {
             echo "## Docker publish summary"
             echo
             echo "| Field | Value |"
             echo "|---|---|"
-            echo "| Branch | \`${GITHUB_REF_NAME}\` |"
-            echo "| Commit | \`${GITHUB_SHA}\` |"
-            echo "| ACR | \`${{ steps.meta.outputs.acr_login_server }}\` |"
-            echo "| Image | \`${IMAGE_NAME}\` |"
-            echo "| Tags | \`${{ steps.meta.outputs.tags }}\` |"
-            echo "| Platform | \`linux/amd64\` |"
+            echo "| Branch | ${GITHUB_REF_NAME} |"
+            echo "| ACR | ${ACR_LOGIN_SERVER} |"
+            echo "| Image | ${IMAGE_NAME} |"
+            echo
+            echo "### Tags"
+            echo
+            echo '```text'
+            echo "${{ steps.tags.outputs.tags }}" | tr ',' '\n'
+            echo '```'
           } >> "$GITHUB_STEP_SUMMARY"

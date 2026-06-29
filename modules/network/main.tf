@@ -23,6 +23,7 @@ resource "azurerm_subnet" "this" {
   virtual_network_name = azurerm_virtual_network.this.name
   address_prefixes     = each.value.address_prefixes
   service_endpoints    = each.value.service_endpoints
+  private_endpoint_network_policies = each.value.private_endpoint_network_policies
 }
 
 resource "azurerm_subnet_network_security_group_association" "this" {

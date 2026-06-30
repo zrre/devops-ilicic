@@ -63,6 +63,17 @@ jobs:
           if-no-files-found: error
           overwrite: true
 
+      - name: Add Checkov real artifact link to summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo
+            echo "### Checkov real IaC artifact"
+            echo
+            echo "[Download Checkov real report](${{ steps.upload_checkov_real.outputs.artifact-url }})"
+          } >> "$GITHUB_STEP_SUMMARY"
+
   checkov-demo-broken:
     name: Checkov demo broken IaC
     runs-on: [self-hosted, azure, linux, x64, shared]
@@ -113,3 +124,14 @@ jobs:
           compression-level: 9
           if-no-files-found: error
           overwrite: true
+          
+      - name: Add Checkov demo artifact link to summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo
+            echo "### Checkov demo artifact"
+            echo
+            echo "[Download Checkov demo report](${{ steps.upload_checkov_demo.outputs.artifact-url }})"
+          } >> "$GITHUB_STEP_SUMMARY"

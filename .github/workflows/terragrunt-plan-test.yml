@@ -19,10 +19,11 @@ env:
   ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
   ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
   ARM_USE_AZUREAD: "true"
+  ADMIN_SSH_PUBLIC_KEY: ${{ secrets.ADMIN_SSH_PUBLIC_KEY }}
 
 jobs:
   plan-test:
-    runs-on: [self-hosted, macOS, ARM64]
+    runs-on: [self-hosted, azure, linux, x64, shared]
 
     steps:
       - name: Checkout
@@ -49,7 +50,7 @@ jobs:
         shell: bash
         run: |
           TG_VERSION="0.77.22"
-          curl -L "https://github.com/gruntwork-io/terragrunt/releases/download/v${TG_VERSION}/terragrunt_darwin_arm64" -o "$RUNNER_TEMP/terragrunt"
+          curl -L "https://github.com/gruntwork-io/terragrunt/releases/download/v${TG_VERSION}/terragrunt_linux_amd64" -o "$RUNNER_TEMP/terragrunt"
           chmod +x "$RUNNER_TEMP/terragrunt"
           echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
 

@@ -10,3 +10,9 @@
 git_runner
 .DS_Store
 **/.DS_Store
+
+# Checkov local reports
+checkov-real.txt
+checkov-demo.txt
+checkov-real-summary.md
+checkov-demo-summary.md

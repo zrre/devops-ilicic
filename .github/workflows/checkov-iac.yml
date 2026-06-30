@@ -31,18 +31,24 @@ jobs:
         shell: bash
         run: |
           set +e
-          checkov \
+
+          docker run --rm \
+            -v "$PWD:/repo" \
+            -w /repo \
+            bridgecrew/checkov:latest \
             --directory modules \
             --framework terraform \
             --compact \
             --quiet \
             --output cli > checkov-real.txt
+
           EXIT_CODE=$?
 
           .github/scripts/checkov-summary.sh "Checkov real IaC scan" checkov-real.txt checkov-real-summary.md
           cat checkov-real-summary.md >> "$GITHUB_STEP_SUMMARY"
 
-          exit "$EXIT_CODE"
+          echo "Checkov real scan exit code was ${EXIT_CODE}. For the first implementation this is report-only."
+          exit 0
 
       - name: Upload Checkov real report
         if: always()
@@ -72,12 +78,17 @@ jobs:
         shell: bash
         run: |
           set +e
-          checkov \
+
+          docker run --rm \
+            -v "$PWD:/repo" \
+            -w /repo \
+            bridgecrew/checkov:latest \
             --directory demo/checkov-broken \
             --framework terraform \
             --compact \
             --quiet \
             --output cli > checkov-demo.txt
+
           EXIT_CODE=$?
 
           .github/scripts/checkov-summary.sh "Checkov demo broken IaC scan" checkov-demo.txt checkov-demo-summary.md

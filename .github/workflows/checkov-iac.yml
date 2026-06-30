@@ -58,6 +58,10 @@ jobs:
           path: |
             checkov-real.txt
             checkov-real-summary.md
+          retention-days: 3
+          compression-level: 9
+          if-no-files-found: error
+          overwrite: true
 
   checkov-demo-broken:
     name: Checkov demo broken IaC
@@ -105,3 +109,7 @@ jobs:
           path: |
             checkov-demo.txt
             checkov-demo-summary.md
+          retention-days: 3
+          compression-level: 9
+          if-no-files-found: error
+          overwrite: true

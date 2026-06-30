@@ -52,11 +52,11 @@ unit_result() {
 }
 
 overall_result() {
-  if printf "%s" "$PLAN_CONTENT" | grep -qi "error"; then
+  if grep -qi "error" <<< "$PLAN_CONTENT"; then
     echo "Plan failed or contains errors"
-  elif printf "%s" "$PLAN_CONTENT" | grep -Eq "Plan: [1-9][0-9]* to add|Plan: [0-9]+ to add, [1-9][0-9]* to change|Plan: [0-9]+ to add, [0-9]+ to change, [1-9][0-9]* to destroy"; then
+  elif grep -Eq "Plan: [1-9][0-9]* to add|Plan: [0-9]+ to add, [1-9][0-9]* to change|Plan: [0-9]+ to add, [0-9]+ to change, [1-9][0-9]* to destroy" <<< "$PLAN_CONTENT"; then
     echo "Changes detected"
-  elif printf "%s" "$PLAN_CONTENT" | grep -q "No changes."; then
+  elif grep -q "No changes." <<< "$PLAN_CONTENT"; then
     echo "No infrastructure changes detected"
   else
     echo "Plan completed, review output below"
@@ -67,15 +67,22 @@ write_limited_block() {
   local content="$1"
   local limit="$2"
 
-  printf "%s" "$content" | head -c "$limit"
-
   local size
-  size="$(printf "%s" "$content" | wc -c | tr -d ' ')"
+  size="$(wc -c <<< "$content" | tr -d ' ')"
 
   if [ "$size" -gt "$limit" ]; then
+    python3 - "$limit" <<< "$content" <<'PY'
+import sys
+
+limit = int(sys.argv[1])
+content = sys.stdin.read()
+sys.stdout.write(content[:limit])
+PY
     echo
     echo
     echo "... output truncated. Check GitHub Actions logs for the full output."
+  else
+    printf "%s" "$content"
   fi
 }
 

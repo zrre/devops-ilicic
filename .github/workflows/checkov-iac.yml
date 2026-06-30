@@ -20,12 +20,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Checkov
-        shell: bash
-        run: |
-          python3 -m pip install --upgrade pip
-          python3 -m pip install --upgrade checkov
-          checkov --version
+      # - name: Install Checkov
+      #   shell: bash
+      #   run: |
+      #     python3 -m pip install --upgrade pip
+      #     python3 -m pip install --upgrade checkov
+      #     checkov --version
 
       - name: Run Checkov on real IaC
         shell: bash
@@ -67,12 +67,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Checkov
-        shell: bash
-        run: |
-          python3 -m pip install --upgrade pip
-          python3 -m pip install --upgrade checkov
-          checkov --version
+      # - name: Install Checkov
+      #   shell: bash
+      #   run: |
+      #     python3 -m pip install --upgrade pip
+      #     python3 -m pip install --upgrade checkov
+      #     checkov --version
 
       - name: Run Checkov demo scan
         shell: bash

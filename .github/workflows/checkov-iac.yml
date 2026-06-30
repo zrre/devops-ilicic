@@ -1,0 +1,107 @@
+name: Checkov IaC
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  checkov-real-iac:
+    name: Checkov real IaC scan
+    runs-on: [self-hosted, azure, linux, x64, shared]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # - name: Install Checkov
+      #   shell: bash
+      #   run: |
+      #     python3 -m pip install --upgrade pip
+      #     python3 -m pip install --upgrade checkov
+      #     checkov --version
+
+      - name: Run Checkov on real IaC
+        shell: bash
+        run: |
+          set +e
+
+          docker run --rm \
+            -v "$PWD:/repo" \
+            -w /repo \
+            bridgecrew/checkov:latest \
+            --directory modules \
+            --framework terraform \
+            --compact \
+            --quiet \
+            --output cli > checkov-real.txt
+
+          EXIT_CODE=$?
+
+          .github/scripts/checkov-summary.sh "Checkov real IaC scan" checkov-real.txt checkov-real-summary.md
+          cat checkov-real-summary.md >> "$GITHUB_STEP_SUMMARY"
+
+          echo "Checkov real scan exit code was ${EXIT_CODE}. For the first implementation this is report-only."
+          exit 0
+
+      - name: Upload Checkov real report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: checkov-real-iac-report
+          path: |
+            checkov-real.txt
+            checkov-real-summary.md
+
+  checkov-demo-broken:
+    name: Checkov demo broken IaC
+    runs-on: [self-hosted, azure, linux, x64, shared]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # - name: Install Checkov
+      #   shell: bash
+      #   run: |
+      #     python3 -m pip install --upgrade pip
+      #     python3 -m pip install --upgrade checkov
+      #     checkov --version
+
+      - name: Run Checkov demo scan
+        shell: bash
+        run: |
+          set +e
+
+          docker run --rm \
+            -v "$PWD:/repo" \
+            -w /repo \
+            bridgecrew/checkov:latest \
+            --directory demo/checkov-broken \
+            --framework terraform \
+            --compact \
+            --quiet \
+            --output cli > checkov-demo.txt
+
+          EXIT_CODE=$?
+
+          .github/scripts/checkov-summary.sh "Checkov demo broken IaC scan" checkov-demo.txt checkov-demo-summary.md
+          cat checkov-demo-summary.md >> "$GITHUB_STEP_SUMMARY"
+
+          echo "Demo scan exit code was ${EXIT_CODE}. This job is intentionally non-blocking."
+          exit 0
+
+      - name: Upload Checkov demo report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: checkov-demo-broken-report
+          path: |
+            checkov-demo.txt
+            checkov-demo-summary.md

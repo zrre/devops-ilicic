@@ -1,0 +1,47 @@
+#cloud-config
+package_update: true
+
+packages:
+  - apt-transport-https
+  - ca-certificates
+  - curl
+  - dnsutils
+  - git
+  - gnupg
+  - jq
+  - lsb-release
+  - unzip
+
+write_files:
+  - path: /usr/local/bin/aks-connect
+    owner: root:root
+    permissions: '0755'
+    content: |
+      #!/usr/bin/env bash
+      set -euo pipefail
+
+      echo "Checking private AKS DNS..."
+      getent hosts "${aks_private_fqdn}"
+
+      echo "Logging in with the VM managed identity..."
+      az login --identity --allow-no-subscriptions >/dev/null
+      az account set --subscription "${subscription_id}"
+
+      echo "Downloading AKS admin credentials..."
+      az aks get-credentials \
+        --resource-group "${aks_resource_group_name}" \
+        --name "${aks_cluster_name}" \
+        --admin \
+        --overwrite-existing
+
+      echo
+      kubectl cluster-info
+      echo
+      kubectl get nodes -o wide
+      echo
+      kubectl get namespaces
+
+runcmd:
+  - [bash, -lc, "curl -sL https://aka.ms/InstallAzureCLIDeb | bash"]
+  - [bash, -lc, "az aks install-cli --install-location /usr/local/bin/kubectl"]
+  - [bash, -lc, "chmod 0755 /usr/local/bin/kubectl /usr/local/bin/aks-connect"]

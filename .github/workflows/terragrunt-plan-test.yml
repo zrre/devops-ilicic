@@ -20,6 +20,7 @@ env:
   ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
   ARM_USE_AZUREAD: "true"
   ADMIN_SSH_PUBLIC_KEY: ${{ secrets.ADMIN_SSH_PUBLIC_KEY }}
+  TG_NON_INTERACTIVE: "true"
 
 jobs:
   plan-test:
@@ -63,7 +64,11 @@ jobs:
 
       - name: Terragrunt init
         working-directory: live/test
-        run: terragrunt run --all -- init -reconfigure
+        run: |
+          terragrunt run --all \
+            --queue-exclude-external \
+            --non-interactive \
+            -- init -reconfigure
 
       - name: Terragrunt HCL format check
         working-directory: .
@@ -79,7 +84,11 @@ jobs:
 
       - name: OpenTofu validate test
         working-directory: live/test
-        run: terragrunt run --all -- validate
+        run: |
+          terragrunt run --all \
+            --queue-exclude-external \
+            --non-interactive \
+            -- validate
       
       - name: Plan test
         id: plan
@@ -87,12 +96,17 @@ jobs:
         shell: bash
         run: |
           set +e
-          terragrunt run --all plan -no-color > plan.txt 2>&1
+
+          terragrunt run --all \
+            --queue-exclude-external \
+            --non-interactive \
+            -- plan -no-color > plan.txt 2>&1
+
           PLAN_EXIT_CODE=$?
           set -e
 
           cat plan.txt
-          echo "exit_code=${PLAN_EXIT_CODE}" >> "$GITHUB_OUTPUT"
+          exit "$PLAN_EXIT_CODE"
 
       - name: Format plan comment
         if: always()

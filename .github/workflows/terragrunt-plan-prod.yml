@@ -78,7 +78,7 @@ jobs:
           terragrunt --version
           az version
 
-            - name: Terragrunt init
+      - name: Terragrunt init
         working-directory: live/prod
         shell: bash
         run: |

@@ -20,6 +20,10 @@ env:
   ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
   ARM_USE_AZUREAD: "true"
   ADMIN_SSH_PUBLIC_KEY: ${{ secrets.ADMIN_SSH_PUBLIC_KEY }}
+  TF_PLUGIN_CACHE_DIR: /home/azureuser/.terraform.d/plugin-cache
+  TF_REGISTRY_DISCOVERY_RETRY: "5"
+  TF_REGISTRY_CLIENT_TIMEOUT: "30"
+  TF_IN_AUTOMATION: "true"
 
 jobs:
   plan-prod:
@@ -40,19 +44,32 @@ jobs:
               "tenantId": "${{ vars.AZURE_TENANT_ID }}"
             }
 
-      - name: Install OpenTofu
-        uses: opentofu/setup-opentofu@v2
-        with:
-          tofu_version: "1.10.0"
-          tofu_wrapper: false
+      # - name: Install OpenTofu
+      #   uses: opentofu/setup-opentofu@v2
+      #   with:
+      #     tofu_version: "1.10.0"
+      #     tofu_wrapper: false
 
-      - name: Install Terragrunt
+      # - name: Install Terragrunt
+      #   shell: bash
+      #   run: |
+      #     TG_VERSION="0.77.22"
+      #     curl -L "https://github.com/gruntwork-io/terragrunt/releases/download/v${TG_VERSION}/terragrunt_linux_amd64" -o "$RUNNER_TEMP/terragrunt"
+      #     chmod +x "$RUNNER_TEMP/terragrunt"
+      #     echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      # instalirani lokalno
+
+      - name: Verify IaC tools
         shell: bash
         run: |
-          TG_VERSION="0.77.22"
-          curl -L "https://github.com/gruntwork-io/terragrunt/releases/download/v${TG_VERSION}/terragrunt_linux_amd64" -o "$RUNNER_TEMP/terragrunt"
-          chmod +x "$RUNNER_TEMP/terragrunt"
-          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+          echo "Runner user: $(whoami)"
+          echo "Runner home: $HOME"
+
+          which tofu
+          tofu version
+
+          which terragrunt
+          terragrunt --version
 
       - name: Show versions
         shell: bash
@@ -61,10 +78,15 @@ jobs:
           terragrunt --version
           az version
 
-      - name: Terragrunt init
+            - name: Terragrunt init
         working-directory: live/prod
-        run: terragrunt run --all -- init -reconfigure
-      
+        shell: bash
+        run: |
+          terragrunt run --all \
+            --queue-exclude-external \
+            --non-interactive \
+            -- init -reconfigure
+
       - name: Terragrunt HCL format check
         working-directory: .
         run: terragrunt hcl fmt --check
@@ -79,7 +101,12 @@ jobs:
 
       - name: OpenTofu validate prod
         working-directory: live/prod
-        run: terragrunt run --all -- validate
+        shell: bash
+        run: |
+          terragrunt run --all \
+            --queue-exclude-external \
+            --non-interactive \
+            -- validate
 
       - name: Plan prod
         id: plan
@@ -87,12 +114,17 @@ jobs:
         shell: bash
         run: |
           set +e
-          terragrunt run --all plan -no-color > plan.txt 2>&1
+
+          terragrunt run --all \
+            --queue-exclude-external \
+            --non-interactive \
+            -- plan -no-color > plan.txt 2>&1
+
           PLAN_EXIT_CODE=$?
           set -e
 
           cat plan.txt
-          echo "exit_code=${PLAN_EXIT_CODE}" >> "$GITHUB_OUTPUT"
+          exit "$PLAN_EXIT_CODE"
 
       - name: Format plan comment
         if: always()

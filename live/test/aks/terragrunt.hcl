@@ -57,11 +57,17 @@ inputs = {
   dns_prefix               = "aks-ilicic-devops-test"
   node_resource_group_name = "rg-ilicic-devops-test-aks-nodes"
 
-  node_subnet_id = dependency.network.outputs.subnet_ids["app"]
-  acr_id         = dependency.private_services.outputs.acr_id
+  system_node_subnet_id = dependency.network.outputs.subnet_ids["app"]
+  user_node_subnet_id   = dependency.network.outputs.subnet_ids["aks"]
+  acr_id                = dependency.private_services.outputs.acr_id
 
   node_count   = 1
   node_vm_size = "Standard_D2s_v5"
+
+  user_node_pool_name       = "userpool"
+  user_node_pool_vm_size    = "Standard_D2s_v5"
+  user_node_pool_node_count = 1
+  user_node_pool_max_pods   = 50
 
   pod_cidr       = "10.244.0.0/16"
   service_cidr   = "10.240.0.0/16"

@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: simple-web
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simple-web
+  namespace: simple-web
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: simple-web
+  template:
+    metadata:
+      labels:
+        app: simple-web
+    spec:
+      nodeSelector:
+        kubernetes.azure.com/mode: user
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: simple-web
+          image: acrilicicdevops.azurecr.io/simple-web@sha256:c7bbcccb726804192eb25cc56d7bc566a19ba8619d668f297f2c012d578a0d21
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            capabilities:
+              drop:
+                - ALL
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: simple-web
+  namespace: simple-web
+spec:
+  type: ClusterIP
+  selector:
+    app: simple-web
+  ports:
+    - name: http
+      port: 80
+      targetPort: http
+      protocol: TCP

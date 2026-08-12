@@ -13,7 +13,13 @@ resource "azurerm_user_assigned_identity" "kubelet" {
 }
 
 resource "azurerm_role_assignment" "control_plane_network_contributor" {
-  scope                = var.node_subnet_id
+  scope                = var.system_node_subnet_id
+  role_definition_name = "Network Contributor"
+  principal_id         = azurerm_user_assigned_identity.control_plane.principal_id
+}
+
+resource "azurerm_role_assignment" "control_plane_user_pool_network_contributor" {
+  scope                = var.user_node_subnet_id
   role_definition_name = "Network Contributor"
   principal_id         = azurerm_user_assigned_identity.control_plane.principal_id
 }
@@ -53,7 +59,7 @@ resource "azurerm_kubernetes_cluster" "this" {
     name           = "system"
     node_count     = var.node_count
     vm_size        = var.node_vm_size
-    vnet_subnet_id = var.node_subnet_id
+    vnet_subnet_id = var.system_node_subnet_id
 
     os_sku                       = "Ubuntu"
     only_critical_addons_enabled = true
@@ -100,4 +106,25 @@ resource "azurerm_kubernetes_cluster" "this" {
     azurerm_role_assignment.kubelet_acr_pull,
     azurerm_role_assignment.control_plane_managed_identity_operator,
   ]
+}
+resource "azurerm_kubernetes_cluster_node_pool" "user" {
+  name                  = var.user_node_pool_name
+  kubernetes_cluster_id = azurerm_kubernetes_cluster.this.id
+
+  mode           = "User"
+  vm_size        = var.user_node_pool_vm_size
+  node_count     = var.user_node_pool_node_count
+  max_pods       = var.user_node_pool_max_pods
+  vnet_subnet_id = var.user_node_subnet_id
+
+  temporary_name_for_rotation = "userpooltmp"
+
+  os_type                = "Linux"
+  node_public_ip_enabled = false
+
+  upgrade_settings {
+    max_surge                     = "10%"
+    drain_timeout_in_minutes      = 0
+    node_soak_duration_in_minutes = 0
+  }
 }

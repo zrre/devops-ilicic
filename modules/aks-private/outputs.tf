@@ -25,3 +25,13 @@ output "kubelet_identity_id" {
 output "kubelet_principal_id" {
   value = azurerm_user_assigned_identity.kubelet.principal_id
 }
+
+output "user_node_pool_id" {
+  description = "Resource ID of the AKS user node pool."
+  value       = azurerm_kubernetes_cluster_node_pool.user.id
+}
+
+output "user_node_pool_name" {
+  description = "Name of the AKS user node pool."
+  value       = azurerm_kubernetes_cluster_node_pool.user.name
+}

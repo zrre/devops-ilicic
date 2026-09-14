@@ -1,27 +1,8 @@
-resource "azurerm_user_assigned_identity" "control_plane" {
-  name                = "id-${var.cluster_name}-control-plane"
-  location            = var.location
-  resource_group_name = var.resource_group_name
-  tags                = var.tags
-}
-
 resource "azurerm_user_assigned_identity" "kubelet" {
   name                = "id-${var.cluster_name}-kubelet"
   location            = var.location
   resource_group_name = var.resource_group_name
   tags                = var.tags
-}
-
-resource "azurerm_role_assignment" "control_plane_network_contributor" {
-  scope                = var.system_node_subnet_id
-  role_definition_name = "Network Contributor"
-  principal_id         = azurerm_user_assigned_identity.control_plane.principal_id
-}
-
-resource "azurerm_role_assignment" "control_plane_user_pool_network_contributor" {
-  scope                = var.user_node_subnet_id
-  role_definition_name = "Network Contributor"
-  principal_id         = azurerm_user_assigned_identity.control_plane.principal_id
 }
 
 resource "azurerm_role_assignment" "kubelet_acr_pull" {
@@ -30,10 +11,25 @@ resource "azurerm_role_assignment" "kubelet_acr_pull" {
   principal_id         = azurerm_user_assigned_identity.kubelet.principal_id
 }
 
-resource "azurerm_role_assignment" "control_plane_managed_identity_operator" {
+resource "azurerm_role_assignment" "system_control_plane_network_contributor" {
+  scope                = var.system_node_subnet_id
+  role_definition_name = "Network Contributor"
+  principal_id         = azurerm_kubernetes_cluster.this.identity[0].principal_id
+  principal_type       = "ServicePrincipal"
+}
+
+resource "azurerm_role_assignment" "system_control_plane_user_pool_network_contributor" {
+  scope                = var.user_node_subnet_id
+  role_definition_name = "Network Contributor"
+  principal_id         = azurerm_kubernetes_cluster.this.identity[0].principal_id
+  principal_type       = "ServicePrincipal"
+}
+
+resource "azurerm_role_assignment" "system_control_plane_managed_identity_operator" {
   scope                = azurerm_user_assigned_identity.kubelet.id
   role_definition_name = "Managed Identity Operator"
-  principal_id         = azurerm_user_assigned_identity.control_plane.principal_id
+  principal_id         = azurerm_kubernetes_cluster.this.identity[0].principal_id
+  principal_type       = "ServicePrincipal"
 }
 
 resource "azurerm_kubernetes_cluster" "this" {
@@ -55,6 +51,11 @@ resource "azurerm_kubernetes_cluster" "this" {
   oidc_issuer_enabled       = true
   workload_identity_enabled = true
 
+  key_vault_secrets_provider {
+    secret_rotation_enabled  = true
+    secret_rotation_interval = "2m"
+  }
+
   default_node_pool {
     name           = "system"
     node_count     = var.node_count
@@ -73,23 +74,16 @@ resource "azurerm_kubernetes_cluster" "this" {
   }
 
   identity {
-    type = "UserAssigned"
+    type = "SystemAssigned"
 
-    identity_ids = [
-      azurerm_user_assigned_identity.control_plane.id,
-    ]
   }
 
-  kubelet_identity {
-    client_id                 = azurerm_user_assigned_identity.kubelet.client_id
-    object_id                 = azurerm_user_assigned_identity.kubelet.principal_id
-    user_assigned_identity_id = azurerm_user_assigned_identity.kubelet.id
-  }
 
   network_profile {
     network_plugin      = "azure"
     network_plugin_mode = "overlay"
     network_data_plane  = "cilium"
+    network_policy      = "cilium"
 
     load_balancer_sku = "standard"
     outbound_type     = "loadBalancer"
@@ -102,9 +96,7 @@ resource "azurerm_kubernetes_cluster" "this" {
   tags = var.tags
 
   depends_on = [
-    azurerm_role_assignment.control_plane_network_contributor,
     azurerm_role_assignment.kubelet_acr_pull,
-    azurerm_role_assignment.control_plane_managed_identity_operator,
   ]
 }
 resource "azurerm_kubernetes_cluster_node_pool" "user" {
@@ -127,4 +119,11 @@ resource "azurerm_kubernetes_cluster_node_pool" "user" {
     drain_timeout_in_minutes      = 0
     node_soak_duration_in_minutes = 0
   }
+}
+
+resource "azurerm_role_assignment" "key_vault_csi_secrets_user" {
+  scope                = var.key_vault_id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = azurerm_kubernetes_cluster.this.key_vault_secrets_provider[0].secret_identity[0].object_id
+  principal_type       = "ServicePrincipal"
 }

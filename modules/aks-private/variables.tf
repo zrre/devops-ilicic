@@ -90,3 +90,7 @@ variable "user_node_pool_max_pods" {
   type        = number
   default     = 50
 }
+
+variable "key_vault_id" {
+  type = string
+}

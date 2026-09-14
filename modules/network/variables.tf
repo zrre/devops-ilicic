@@ -20,6 +20,7 @@ variable "subnets" {
     address_prefixes                  = list(string)
     service_endpoints                 = list(string)
     private_endpoint_network_policies = optional(string, "Enabled")
+    create_nsg                        = optional(bool, true)
   }))
 }
 

@@ -60,6 +60,7 @@ inputs = {
   system_node_subnet_id = dependency.network.outputs.subnet_ids["app"]
   user_node_subnet_id   = dependency.network.outputs.subnet_ids["aks"]
   acr_id                = dependency.private_services.outputs.acr_id
+  key_vault_id          = "/subscriptions/${get_env("ARM_SUBSCRIPTION_ID")}/resourceGroups/rg-ilicic-devops-shared/providers/Microsoft.KeyVault/vaults/kv-ilicic-devops-shared"
 
   node_count   = 1
   node_vm_size = "Standard_D2s_v5"

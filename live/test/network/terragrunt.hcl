@@ -41,6 +41,13 @@ inputs = {
       service_endpoints = ["Microsoft.Storage"]
     }
 
+    bastion = {
+      name              = "AzureBastionSubnet"
+      address_prefixes  = ["10.10.20.0/26"]
+      service_endpoints = []
+      create_nsg        = false
+    }
+
     private_endpoints = {
       name              = "snet-private-endpoints-test"
       address_prefixes  = ["10.10.4.0/24"]
@@ -106,22 +113,6 @@ inputs = {
     ]
 
     mgmt = [
-      {
-        name                   = "allow-ssh-from-public-ips"
-        priority               = 100
-        direction              = "Inbound"
-        access                 = "Allow"
-        protocol               = "Tcp"
-        source_port_range      = "*"
-        destination_port_range = "22"
-        source_address_prefixes = [
-          "77.46.241.175",
-          "79.175.106.38",
-          "178.221.121.217",
-          "109.93.112.233",
-        ]
-        destination_address_prefix = "10.10.3.0/24"
-      },
       {
         name                       = "deny-internet-inbound"
         priority                   = 4096

@@ -6,8 +6,16 @@ resource "azurerm_virtual_network" "this" {
   tags                = var.tags
 }
 
+locals {
+  subnets_with_nsg = {
+    for key, subnet in var.subnets :
+    key => subnet
+    if subnet.create_nsg
+  }
+}
+
 resource "azurerm_network_security_group" "this" {
-  for_each = var.subnets
+  for_each = local.subnets_with_nsg
 
   name                = "nsg-${each.value.name}"
   location            = var.location
@@ -27,7 +35,7 @@ resource "azurerm_subnet" "this" {
 }
 
 resource "azurerm_subnet_network_security_group_association" "this" {
-  for_each = var.subnets
+  for_each = local.subnets_with_nsg
 
   subnet_id                 = azurerm_subnet.this[each.key].id
   network_security_group_id = azurerm_network_security_group.this[each.key].id

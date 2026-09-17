@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: secret-demo
+  namespace: secret-demo
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: secret-demo
+
+  template:
+    metadata:
+      labels:
+        app: secret-demo
+
+    spec:
+      nodeSelector:
+        kubernetes.azure.com/mode: user
+
+      containers:
+        - name: secret-demo
+          image: acrilicicdevops.azurecr.io/secret-demo:1.0.0
+
+          ports:
+            - containerPort: 8080
+
+          env:
+            - name: SECRET_FILE
+              value: /mnt/secrets-store/demo-api-key
+
+          volumeMounts:
+            - name: secrets-store
+              mountPath: /mnt/secrets-store
+              readOnly: true
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 5
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsNonRoot: true
+            runAsUser: 10001
+            runAsGroup: 10001
+            capabilities:
+              drop:
+                - ALL
+
+      volumes:
+        - name: secrets-store
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: secret-demo-kv

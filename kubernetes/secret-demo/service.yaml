@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: secret-demo
+  namespace: secret-demo
+spec:
+  type: ClusterIP
+
+  selector:
+    app: secret-demo
+
+  ports:
+    - port: 80
+      targetPort: 8080

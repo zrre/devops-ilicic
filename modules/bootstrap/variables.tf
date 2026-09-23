@@ -29,3 +29,9 @@ variable "storage_container_name" {
 variable "tags" {
   type = map(string)
 }
+
+variable "blob_data_contributor_principal_ids" {
+  description = "Principal IDs allowed to read and write Terraform state blobs."
+  type        = set(string)
+  default     = []
+}

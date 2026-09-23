@@ -15,10 +15,16 @@ inputs = {
     "93.86.182.168",
     "109.93.112.233",
     "20.229.81.156",
+    "178.221.101.15",
   ]
 
   allowed_virtual_network_subnet_ids = [
     "/subscriptions/d960facb-8e1a-44d3-be23-1c460b7077ee/resourceGroups/rg-ilicic-devops-shared/providers/Microsoft.Network/virtualNetworks/vnet-ilicic-devops-shared/subnets/snet-runner-shared",
+    "/subscriptions/d960facb-8e1a-44d3-be23-1c460b7077ee/resourceGroups/rg-ilicic-devops-test/providers/Microsoft.Network/virtualNetworks/vnet-ilicic-devops-test/subnets/snet-mgmt-test",
+  ]
+
+  blob_data_contributor_principal_ids = [
+    "5c27445f-9051-4cbb-864e-b8024dfd232c",
   ]
 
   tags = {

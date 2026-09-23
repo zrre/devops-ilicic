@@ -40,5 +40,20 @@ inputs = {
   storage_account_name = "stilicicappshared"
   key_vault_name       = "kv-ilicic-devops-shared"
 
+  artifact_cache_enabled             = true
+  artifact_cache_credential_set_name = "DockerHubCreds"
+  artifact_cache_login_server        = "docker.io"
+
+  artifact_cache_username_secret_id = "https://kv-ilicic-devops-shared.vault.azure.net/secrets/dockerhub-username"
+  artifact_cache_password_secret_id = "https://kv-ilicic-devops-shared.vault.azure.net/secrets/dockerhub-pat"
+
+  artifact_cache_rules = {
+    python = {
+      name        = "PythonCache"
+      source_repo = "docker.io/library/python"
+      target_repo = "cache/python"
+    }
+  }
+
   tags = local.env.locals.tags
 }

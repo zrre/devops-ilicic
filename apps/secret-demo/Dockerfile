@@ -1,4 +1,4 @@
-FROM python:3.13-alpine
+FROM acrilicicdevops.azurecr.io/cache/python:3.13-alpine
 
 WORKDIR /app
 

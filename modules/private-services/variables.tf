@@ -29,3 +29,38 @@ variable "key_vault_name" {
 variable "tags" {
   type = map(string)
 }
+
+variable "artifact_cache_enabled" {
+  type    = bool
+  default = false
+}
+
+variable "artifact_cache_credential_set_name" {
+  type    = string
+  default = "DockerHubCreds"
+}
+
+variable "artifact_cache_login_server" {
+  type    = string
+  default = "docker.io"
+}
+
+variable "artifact_cache_username_secret_id" {
+  type    = string
+  default = null
+}
+
+variable "artifact_cache_password_secret_id" {
+  type    = string
+  default = null
+}
+
+variable "artifact_cache_rules" {
+  type = map(object({
+    name        = string
+    source_repo = string
+    target_repo = string
+  }))
+
+  default = {}
+}

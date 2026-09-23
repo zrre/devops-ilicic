@@ -38,7 +38,7 @@ resource "azurerm_key_vault" "this" {
   tenant_id                     = data.azurerm_client_config.current.tenant_id
   sku_name                      = "standard"
   public_network_access_enabled = false
-  enable_rbac_authorization     = true
+  rbac_authorization_enabled    = true
   soft_delete_retention_days    = 7
   purge_protection_enabled      = false
 
@@ -118,6 +118,48 @@ resource "azurerm_private_endpoint" "acr" {
   }
 
   tags = var.tags
+}
+
+resource "azurerm_container_registry_credential_set" "dockerhub" {
+  count = var.artifact_cache_enabled ? 1 : 0
+
+  name                  = var.artifact_cache_credential_set_name
+  container_registry_id = azurerm_container_registry.this.id
+  login_server          = var.artifact_cache_login_server
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+  authentication_credentials {
+    username_secret_id = var.artifact_cache_username_secret_id
+    password_secret_id = var.artifact_cache_password_secret_id
+  }
+}
+
+resource "azurerm_role_assignment" "artifact_cache_key_vault_secrets_user" {
+  count = var.artifact_cache_enabled ? 1 : 0
+
+  scope                = azurerm_key_vault.this.id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = azurerm_container_registry_credential_set.dockerhub[0].identity[0].principal_id
+  principal_type       = "ServicePrincipal"
+}
+
+resource "azurerm_container_registry_cache_rule" "this" {
+  for_each = var.artifact_cache_enabled ? var.artifact_cache_rules : {}
+
+  name                  = each.value.name
+  container_registry_id = azurerm_container_registry.this.id
+
+  source_repo = each.value.source_repo
+  target_repo = each.value.target_repo
+
+  credential_set_id = azurerm_container_registry_credential_set.dockerhub[0].id
+
+  depends_on = [
+    azurerm_role_assignment.artifact_cache_key_vault_secrets_user,
+  ]
 }
 
 resource "azurerm_private_endpoint" "storage_blob" {

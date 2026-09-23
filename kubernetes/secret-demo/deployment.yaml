@@ -28,7 +28,11 @@ spec:
 
           env:
             - name: SECRET_FILE
-              value: /mnt/secrets-store/demo-api-key
+              valuoFrom:
+                secretKeyRef:
+                  name: demo-api-key-k8s
+                  key: api-key
+              #value: /mnt/secrets-store/demo-api-key
 
           volumeMounts:
             - name: secrets-store

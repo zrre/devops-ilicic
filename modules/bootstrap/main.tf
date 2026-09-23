@@ -40,3 +40,11 @@ resource "azurerm_management_lock" "tfstate_rg" {
   lock_level = "CanNotDelete"
   notes      = "Protect Terraform state resource group from accidental deletion."
 }
+
+resource "azurerm_role_assignment" "tfstate_blob_data_contributor" {
+  for_each = var.blob_data_contributor_principal_ids
+
+  scope                = azurerm_storage_account.tfstate.id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = each.value
+}

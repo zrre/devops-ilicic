@@ -1,0 +1,90 @@
+name: GitHub Azure OIDC Test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  oidc-test:
+    name: Azure OIDC authentication
+    if: github.ref == 'refs/heads/develop'
+    runs-on: ubuntu-latest
+
+    environment: test-plan
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Azure login via OIDC
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Verify Azure identity
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          az account show \
+            --query '{identity:user.type}' \
+            -o json
+
+          echo "Azure OIDC authentication successful."
+
+      - name: Verify test resource group access
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          az group show \
+            --name rg-ilicic-devops-test \
+            --query properties.provisioningState \
+            -o tsv
+
+          echo "Test resource group access successful."
+
+      - name: Verify AKS read access
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          az aks show \
+            --resource-group rg-ilicic-devops-test \
+            --name aks-ilicic-devops-test \
+            --query provisioningState \
+            -o tsv
+
+          echo "AKS metadata read access successful."
+
+      - name: Verify shared resource group is inaccessible
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          ERROR_FILE=$(mktemp)
+          trap 'rm -f "$ERROR_FILE"' EXIT
+
+          if az group show \
+            --name rg-ilicic-devops-shared \
+            --output none 2>"$ERROR_FILE"; then
+
+            echo "ERROR: Unexpected access to shared resource group."
+            exit 1
+          fi
+
+          if grep -qi 'AuthorizationFailed' "$ERROR_FILE"; then
+            echo "PASS: Access to shared resource group denied."
+          else
+            echo "ERROR: Unexpected failure during authorization test."
+            exit 1
+          fi
+
+      - name: Azure logout
+        if: always()
+        run: az logout

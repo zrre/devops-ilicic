@@ -1,26 +1,27 @@
-resource "kubernetes_manifest" "appproject" {
-  manifest = yamldecode(var.appproject_manifest)
+resource "helm_release" "bootstrap" {
+  name       = "argocd-bootstrap"
+  repository = "https://argoproj.github.io/argo-helm"
+  chart      = "argocd-apps"
+  version    = "2.0.8"
 
-  field_manager {
-    name            = "terraform"
-    force_conflicts = false
-  }
+  namespace        = "argocd"
+  create_namespace = false
 
-  lifecycle {
-    prevent_destroy = true
-  }
-}
+  atomic          = false
+  cleanup_on_fail = false
+  force_update    = false
+  take_ownership  = false
 
-resource "kubernetes_manifest" "applicationset" {
-  manifest = yamldecode(var.applicationset_manifest)
+  wait    = true
+  timeout = 300
 
-  field_manager {
-    name            = "terraform"
-    force_conflicts = false
-  }
-
-  depends_on = [
-    kubernetes_manifest.appproject
+  values = [
+    yamlencode({
+      itemTemplates = [
+        yamldecode(var.appproject_manifest),
+        yamldecode(var.applicationset_manifest)
+      ]
+    })
   ]
 
   lifecycle {

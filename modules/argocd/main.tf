@@ -15,9 +15,14 @@ resource "helm_release" "argocd" {
   wait    = true
   timeout = 600
 
-  values = [
-    file("${path.module}/helm-values.yaml")
-  ]
+  values = concat(
+    [
+      file("${path.module}/helm-values.yaml")
+    ],
+    var.sso_enabled ? [
+      yamlencode(local.sso_values)
+    ] : []
+  )
 
   lifecycle {
     prevent_destroy = true

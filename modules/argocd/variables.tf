@@ -26,3 +26,39 @@ variable "take_ownership" {
   type        = bool
   default     = false
 }
+
+variable "sso_enabled" {
+  description = "Enable Microsoft Entra ID SSO."
+  type        = bool
+  default     = false
+}
+
+variable "sso_tenant_id" {
+  description = "Microsoft Entra ID tenant ID."
+  type        = string
+  default     = ""
+}
+
+variable "sso_client_id" {
+  description = "Microsoft Entra ID application client ID."
+  type        = string
+  default     = ""
+}
+
+variable "sso_oidc_issuer" {
+  description = "Microsoft Entra ID OIDC issuer."
+  type        = string
+  default     = ""
+}
+
+variable "sso_admin_group_id" {
+  description = "Entra ID administrator group object ID."
+  type        = string
+  default     = ""
+}
+
+variable "sso_log_viewer_group_id" {
+  description = "Entra ID log viewer group object ID."
+  type        = string
+  default     = ""
+}

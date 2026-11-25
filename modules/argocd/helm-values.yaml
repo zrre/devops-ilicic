@@ -40,5 +40,9 @@ dex:
 redis:
   enabled: true
 
+  serviceAccount:
+    create: true
+    name: argocd-redis
+
 notifications:
   enabled: true

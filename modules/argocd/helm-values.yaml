@@ -1,6 +1,7 @@
 fullnameOverride: argocd
 
 global:
+  domain: argo.zrre.net
   image:
     tag: v3.5.6
 
@@ -11,6 +12,7 @@ crds:
 configs:
   cm:
     admin.enabled: true
+    url: https://argo.zrre.net
 
   params:
     server.insecure: true
@@ -28,6 +30,23 @@ server:
 
   ingress:
     enabled: false
+  
+  httproute:
+    enabled: true
+
+    parentRefs:
+      - name: nginx-public
+        namespace: nginx-demo
+        sectionName: argo-https
+
+    hostnames:
+      - argo.zrre.net
+
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /
 
 repoServer:
   replicas: 1

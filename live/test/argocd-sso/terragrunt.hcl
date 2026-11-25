@@ -37,4 +37,8 @@ inputs = {
 
   namespace            = "argocd"
   service_account_name = "argocd-server"
+
+  owner_object_ids = [
+    "5c27445f-9051-4cbb-864e-b8024dfd232c"
+  ]
 }

@@ -39,3 +39,8 @@ variable "service_account_name" {
   type        = string
   default     = "argocd-server"
 }
+
+variable "owner_object_ids" {
+  description = "Explicit Entra ID owners of the managed resources."
+  type        = set(string)
+}

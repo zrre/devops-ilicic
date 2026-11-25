@@ -31,8 +31,15 @@ terraform {
 }
 
 inputs = {
-  kubeconfig_path = "~/.kube/config"
-  kube_context    = "${dependency.aks.outputs.cluster_name}-admin"
+  kubeconfig_path = get_env(
+    "KUBECONFIG",
+    "~/.kube/config"
+  )
+
+  kube_context = get_env(
+    "KUBE_CONTEXT",
+    "${dependency.aks.outputs.cluster_name}-admin"
+  )
 
   namespace     = "argocd"
   chart_version = "10.11.6"

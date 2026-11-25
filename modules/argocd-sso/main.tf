@@ -1,14 +1,10 @@
-data "azuread_client_config" "current" {}
-
 # Microsoft Entra ID App Registration
 
 resource "azuread_application" "argocd" {
   display_name     = var.application_name
   sign_in_audience = "AzureADMyOrg"
 
-  owners = [
-    data.azuread_client_config.current.object_id
-  ]
+  owners = var.owner_object_ids
 
   group_membership_claims = [
     "ApplicationGroup"
@@ -40,9 +36,7 @@ resource "azuread_service_principal" "argocd" {
   client_id                    = azuread_application.argocd.client_id
   app_role_assignment_required = true
 
-  owners = [
-    data.azuread_client_config.current.object_id
-  ]
+  owners = var.owner_object_ids
 
   lifecycle {
     prevent_destroy = true
@@ -74,9 +68,7 @@ resource "azuread_group" "admins" {
   security_enabled = true
   mail_enabled     = false
 
-  owners = [
-    data.azuread_client_config.current.object_id
-  ]
+  owners = var.owner_object_ids
 }
 
 # Log viewer security group
@@ -87,9 +79,7 @@ resource "azuread_group" "log_viewers" {
   security_enabled = true
   mail_enabled     = false
 
-  owners = [
-    data.azuread_client_config.current.object_id
-  ]
+  owners = var.owner_object_ids
 }
 
 # Group memberships

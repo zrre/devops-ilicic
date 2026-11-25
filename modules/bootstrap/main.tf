@@ -10,6 +10,21 @@ resource "azurerm_storage_account" "tfstate" {
   location                 = azurerm_resource_group.this.location
   account_tier             = "Standard"
   account_replication_type = "LRS"
+  blob_properties {
+    versioning_enabled = true
+
+    delete_retention_policy {
+      days = 30
+    }
+
+    container_delete_retention_policy {
+      days = 30
+    }
+  }
+
+  lifecycle {
+    prevent_destroy = true
+  }
 
   min_tls_version                 = "TLS1_2"
   allow_nested_items_to_be_public = false

@@ -47,3 +47,8 @@ output "key_vault_csi_object_id" {
 output "key_vault_csi_identity_id" {
   value = azurerm_kubernetes_cluster.this.key_vault_secrets_provider[0].secret_identity[0].user_assigned_identity_id
 }
+
+output "oidc_issuer_url" {
+  description = "OIDC issuer URL of the AKS cluster."
+  value       = azurerm_kubernetes_cluster.this.oidc_issuer_url
+}

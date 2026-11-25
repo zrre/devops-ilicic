@@ -18,8 +18,18 @@ resource "helm_release" "bootstrap" {
   values = [
     yamlencode({
       itemTemplates = [
-        yamldecode(var.appproject_manifest),
-        yamldecode(var.applicationset_manifest)
+        {
+          template = "{{ .manifest }}"
+
+          items = [
+            {
+              manifest = var.appproject_manifest
+            },
+            {
+              manifest = var.applicationset_manifest
+            }
+          ]
+        }
       ]
     })
   ]

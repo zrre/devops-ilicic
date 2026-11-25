@@ -2,6 +2,23 @@ terraform {
   source = "../../modules/bootstrap"
 }
 
+generate "backend" {
+  path      = "backend.tf"
+  if_exists = "overwrite_terragrunt"
+
+  contents = <<EOF
+terraform {
+  backend "azurerm" {
+    resource_group_name  = "rg-ilicic-devops-tfstate"
+    storage_account_name = "stilicicdevopstf"
+    container_name       = "tfstate"
+    key                  = "bootstrap/terraform.tfstate"
+    use_azuread_auth     = true
+  }
+}
+EOF
+}
+
 inputs = {
   resource_group_name    = "rg-ilicic-devops-tfstate"
   location               = "westeurope"
@@ -33,4 +50,5 @@ inputs = {
     managed_by  = "terragrunt"
     project     = "ilicic-devops"
   }
+  
 }

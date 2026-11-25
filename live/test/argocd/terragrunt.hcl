@@ -33,5 +33,5 @@ inputs = {
   namespace     = "argocd"
   chart_version = "10.11.6"
 
-  take_ownership = true
+  take_ownership = false
 }

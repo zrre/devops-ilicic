@@ -14,7 +14,7 @@ dependency "aks" {
   mock_outputs_merge_strategy_with_state = "shallow"
 
   mock_outputs = {
-    oidc_issuer_url = dependency.aks.outputs.oidc_issuer_url
+    oidc_issuer_url = "https://example.invalid/mock-aks-issuer/"
   }
 }
 

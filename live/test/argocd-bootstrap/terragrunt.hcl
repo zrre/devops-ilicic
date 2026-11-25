@@ -27,8 +27,15 @@ terraform {
 }
 
 inputs = {
-  kubeconfig_path = "~/.kube/config"
-  kube_context    = "${dependency.aks.outputs.cluster_name}-admin"
+  kubeconfig_path = get_env(
+    "KUBECONFIG",
+    "~/.kube/config"
+  )
+
+  kube_context = get_env(
+    "KUBE_CONTEXT",
+    "${dependency.aks.outputs.cluster_name}-admin"
+  )
 
   appproject_manifest = file(
     "${get_repo_root()}/kubernetes/argocd/appproject.yaml"

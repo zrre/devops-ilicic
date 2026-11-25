@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: training
+  namespace: argocd
+
+spec:
+  description: DevOps training applications
+
+  sourceRepos:
+    - https://github.com/zrre/devops-ilicic.git
+    - https://github.com/zrre/argo-demo.git
+
+  destinations:
+    - namespace: argo-demo
+      server: https://kubernetes.default.svc
+
+    - namespace: nginx-dev
+      server: https://kubernetes.default.svc
+
+  clusterResourceWhitelist:
+    - group: ""
+      kind: Namespace
+
+  namespaceResourceWhitelist:
+    - group: apps
+      kind: Deployment
+
+    - group: ""
+      kind: Service

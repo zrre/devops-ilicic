@@ -14,6 +14,8 @@ configs:
 
   params:
     server.insecure: true
+    applicationsetcontroller.policy: create-update
+    applicationsetcontroller.enable.policy.override: "false"
 
 controller:
   replicas: 1

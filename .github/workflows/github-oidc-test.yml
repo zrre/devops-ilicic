@@ -2,6 +2,11 @@ name: GitHub Azure OIDC Test
 
 on:
   workflow_dispatch:
+  push:
+   branches:
+     - develop
+   paths:
+    - ".github/workflows/github-oidc-test.yml"
 
 permissions:
   contents: read

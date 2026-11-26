@@ -4,7 +4,7 @@ include "root" {
 
 locals {
   subscription_id = get_env("ARM_SUBSCRIPTION_ID")
-  tenant_id       = get_env("ARM_TENANT_ID")
+  tenant_id       = get_env("ILICIC_TENANT_ID")
 }
 
 terraform {

@@ -50,5 +50,5 @@ inputs = {
     managed_by  = "terragrunt"
     project     = "ilicic-devops"
   }
-  
+
 }

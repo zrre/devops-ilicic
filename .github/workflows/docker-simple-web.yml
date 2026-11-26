@@ -8,16 +8,18 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
 
 jobs:
   docker-build:
     name: Docker build simple-web
-    runs-on: [self-hosted, azure, linux, x64, shared]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Docker version
         run: |
@@ -25,10 +27,12 @@ jobs:
           docker compose version
 
       - name: Validate docker compose
+        id: compose_config
         working-directory: docker/simple-web
         run: docker compose config
 
       - name: Build image
+        id: build
         working-directory: docker/simple-web
         run: docker compose build --no-cache
 
@@ -66,8 +70,10 @@ jobs:
       - name: Grype scan - JSON report
         shell: bash
         run: |
+          set -euo pipefail
+
           grype simple-web:local \
-            -o json > grype-report.json || true
+            -o json > grype-report.json
 
       - name: Generate security summary
         if: always()
@@ -76,48 +82,9 @@ jobs:
           python3 .github/scripts/container-security-summary.py
           cat security-summary.md >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Comment PR with security summary
-        if: always()
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const fs = require("fs");
-
-            if (!fs.existsSync("security-summary.md")) {
-              console.log("security-summary.md not found, skipping PR comment.");
-              return;
-            }
-
-            const body = fs.readFileSync("security-summary.md", "utf8");
-            const marker = "# Container security scan summary";
-
-            const comments = await github.rest.issues.listComments({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-            });
-
-            const existing = comments.data.find(comment =>
-              comment.user.type === "Bot" && comment.body.includes(marker)
-            );
-
-            if (existing) {
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: existing.id,
-                body,
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body,
-              });
-            }
-
       - name: Trivy scan - fail on fixable HIGH and CRITICAL
+        id: trivy_gate
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         shell: bash
         run: |
           trivy image \
@@ -128,6 +95,8 @@ jobs:
             simple-web:local
 
       - name: Grype scan - fail on fixable HIGH and CRITICAL
+        id: grype_gate
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         shell: bash
         run: |
           grype simple-web:local \
@@ -139,20 +108,46 @@ jobs:
         run: docker compose up -d
 
       - name: Security checks
+        id: security_checks
         working-directory: docker/simple-web
+        shell: bash
         run: |
-          docker compose exec -T simple-web id
-          if docker compose exec -T simple-web sh -c "touch /test-file"; then
-            echo "Container filesystem is writable, expected read-only"
+          set -euo pipefail
+
+          CONTAINER_UID=$(docker compose exec -T simple-web id -u)
+
+          if [ "$CONTAINER_UID" = "0" ]; then
+            echo "ERROR: Container is running as root"
             exit 1
-          else
-            echo "Readonly filesystem check passed"
           fi
 
+          echo "Non-root check passed. UID: $CONTAINER_UID"
+
+          CONTAINER_ID=$(docker compose ps -q simple-web)
+
+          test -n "$CONTAINER_ID"
+
+          READ_ONLY=$(docker inspect \
+            --format '{{.HostConfig.ReadonlyRootfs}}' \
+            "$CONTAINER_ID")
+
+          if [ "$READ_ONLY" != "true" ]; then
+            echo "ERROR: Container root filesystem is writable"
+            exit 1
+          fi
+
+          echo "Read-only filesystem check passed"
+
       - name: Smoke test
+        id: smoke_test
         run: |
-          sleep 3
-          curl -f http://localhost:8080
+          curl \
+            --fail \
+            --retry 10 \
+            --retry-delay 2 \
+            --retry-connrefused \
+            --max-time 10 \
+            http://localhost:8080
 
       - name: Show image size
         run: |
@@ -166,18 +161,30 @@ jobs:
             echo
             echo "| Check | Result |"
             echo "|---|---|"
-            echo "| Compose config | Passed |"
-            echo "| Image build | Passed |"
-            echo "| Smoke test | Passed |"
-            echo "| Non-root user | Passed |"
-            echo "| Read-only filesystem | Passed |"
+            echo "| Compose config | ${{ steps.compose_config.outcome }} |"
+            echo "| Image build | ${{ steps.build.outcome }} |"
+            echo "| Trivy security gate | ${{ steps.trivy_gate.outcome }} |"
+            echo "| Grype security gate | ${{ steps.grype_gate.outcome }} |"
+            echo "| Security checks | ${{ steps.security_checks.outcome }} |"
+            echo "| Smoke test | ${{ steps.smoke_test.outcome }} |"
             echo
             echo "### Image size"
-            echo
             echo '```text'
             docker images simple-web:local
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload container security reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: simple-web-security-reports
+          path: |
+            trivy-report.json
+            grype-report.json
+            security-summary.md
+          retention-days: 3
+          if-no-files-found: warn
 
       - name: Cleanup
         if: always()

@@ -13,6 +13,8 @@ dependencies {
 dependency "network" {
   config_path = "../network"
 
+  mock_outputs_allowed_terraform_commands = ["init", "validate", "plan", "providers"]
+
   mock_outputs = {
     subnet_ids = {
       mgmt = "/subscriptions/mock/resourceGroups/mock/providers/Microsoft.Network/virtualNetworks/mock-vnet/subnets/mock-mgmt"

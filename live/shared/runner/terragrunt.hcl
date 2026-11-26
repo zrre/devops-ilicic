@@ -35,7 +35,7 @@ inputs = {
   admin_username = "azureuser"
 
   subnet_id            = dependency.network.outputs.subnet_ids["runner"]
-  admin_ssh_public_key = file("~/.ssh/id_ed25519.pub")
+  admin_ssh_public_key = get_env("RUNNER_SSH_PUBLIC_KEY")
 
   github_repo_url     = "https://github.com/zrre/devops-ilicic"
   github_runner_token = get_env("TF_VAR_github_runner_token", "")

@@ -27,6 +27,13 @@ dependency "private_services" {
 
   mock_outputs_allowed_terraform_commands = ["init", "validate", "plan"]
 
+  mock_outputs_allowed_terraform_commands = [
+    "init",
+    "validate",
+    "plan",
+    "providers"
+  ]
+ 
   mock_outputs = {
     acr_id             = "/subscriptions/mock/resourceGroups/mock/providers/Microsoft.ContainerRegistry/registries/mockacr"
     acr_login_server   = "mockacr.azurecr.io"

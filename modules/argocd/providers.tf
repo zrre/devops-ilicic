@@ -3,7 +3,7 @@ terraform {
 
   required_providers {
     helm = {
-      source  = "hashicorp/helm"
+      source  = "registry.opentofu.org/hashicorp/helm"
       version = "3.3.0"
     }
   }

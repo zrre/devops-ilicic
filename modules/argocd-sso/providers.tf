@@ -3,7 +3,7 @@ terraform {
 
   required_providers {
     azuread = {
-      source  = "hashicorp/azuread"
+      source  = "registry.opentofu.org/hashicorp/azuread"
       version = "~> 3.6.0"
     }
   }

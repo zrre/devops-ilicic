@@ -13,7 +13,7 @@ remote_state {
   config = {
     resource_group_name  = "rg-ilicic-devops-tfstate"
     storage_account_name = "stilicicdevopstf"
-    container_name       = "tfstate"
+    container_name       = "tfstate-shared"
 
     key = "${local.env.locals.environment}/${path_relative_to_include()}.tfstate"
 

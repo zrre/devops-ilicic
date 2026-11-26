@@ -1,3 +1,4 @@
+terraform_binary = "tofu"
 terraform {
   source = "../../modules/bootstrap"
 }

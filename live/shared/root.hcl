@@ -1,3 +1,4 @@
+terraform_binary = "tofu"
 locals {
   env = read_terragrunt_config(find_in_parent_folders("env.hcl"))
 }

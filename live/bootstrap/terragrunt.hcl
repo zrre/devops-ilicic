@@ -11,7 +11,7 @@ terraform {
   backend "azurerm" {
     resource_group_name  = "rg-ilicic-devops-tfstate"
     storage_account_name = "stilicicdevopstf"
-    container_name       = "tfstate"
+    container_name       = "tfstate-bootstrap"
     key                  = "bootstrap/terraform.tfstate"
     use_azuread_auth     = true
   }

@@ -11,14 +11,17 @@ permissions:
 
 jobs:
   validate-source-branch:
-    runs-on: [self-hosted, azure, linux, x64, shared]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
 
     steps:
       - name: Validate source branch
         shell: bash
+        env:
+          BASE: ${{ github.base_ref }}
+          HEAD: ${{ github.head_ref }}
         run: |
-          BASE="${{ github.base_ref }}"
-          HEAD="${{ github.head_ref }}"
+          set -euo pipefail
 
           echo "Base branch: $BASE"
           echo "Head branch: $HEAD"

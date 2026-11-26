@@ -1,0 +1,59 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: training-applications
+  namespace: argocd
+
+spec:
+  goTemplate: true
+
+  goTemplateOptions:
+    - missingkey=error
+
+  generators:
+    - list:
+        elements:
+          - name: argo-demo
+            namespace: argo-demo
+            repoURL: https://github.com/zrre/devops-ilicic.git
+            revision: feature/nginx-k8s-demo
+            path: kubernetes/argo-demo
+
+          - name: nginx-dev
+            namespace: nginx-dev
+            repoURL: https://github.com/zrre/argo-demo.git
+            revision: HEAD
+            path: dev/nginx
+
+  syncPolicy:
+    applicationsSync: create-update
+    preserveResourcesOnDeletion: true
+
+  template:
+    metadata:
+      name: '{{.name}}'
+
+      labels:
+        environment: test
+        managed-by: applicationset
+
+    spec:
+      project: training
+
+      source:
+        repoURL: '{{.repoURL}}'
+        targetRevision: '{{.revision}}'
+        path: '{{.path}}'
+
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{.namespace}}'
+
+      syncPolicy:
+        automated:
+          enabled: true
+          prune: true
+          selfHeal: true
+
+        syncOptions:
+          - CreateNamespace=true

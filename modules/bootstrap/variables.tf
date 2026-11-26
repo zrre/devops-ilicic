@@ -35,3 +35,9 @@ variable "blob_data_contributor_principal_ids" {
   type        = set(string)
   default     = []
 }
+
+variable "additional_state_containers" {
+  description = "Additional storage containers for isolated Terraform state."
+  type        = set(string)
+  default     = []
+}

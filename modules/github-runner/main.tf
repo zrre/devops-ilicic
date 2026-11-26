@@ -71,6 +71,14 @@ resource "azurerm_linux_virtual_machine" "this" {
   admin_username                  = var.admin_username
   disable_password_authentication = true
 
+  lifecycle {
+    prevent_destroy = true
+
+    ignore_changes = [
+      custom_data,
+    ]
+  }
+
   network_interface_ids = [
     azurerm_network_interface.this.id
   ]

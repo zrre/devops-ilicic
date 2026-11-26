@@ -9,17 +9,18 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write
-  issues: write
 
 jobs:
   checkov-real-iac:
     name: Checkov real IaC scan
-    runs-on: [self-hosted, azure, linux, x64, shared]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       # - name: Install Checkov
       #   shell: bash
@@ -31,27 +32,28 @@ jobs:
       - name: Run Checkov on real IaC
         shell: bash
         run: |
-          set +e
+          set -euo pipefail
 
           docker run --rm \
-            -v "$PWD:/repo" \
+            -v "$PWD:/repo:ro" \
             -w /repo \
             bridgecrew/checkov:latest \
             --directory modules \
             --framework terraform \
             --compact \
             --quiet \
+            --soft-fail \
             --output cli > checkov-real.txt
 
-          EXIT_CODE=$?
+          bash .github/scripts/checkov-summary.sh \
+            "Checkov real IaC scan" \
+            checkov-real.txt \
+            checkov-real-summary.md
 
-          .github/scripts/checkov-summary.sh "Checkov real IaC scan" checkov-real.txt checkov-real-summary.md
           cat checkov-real-summary.md >> "$GITHUB_STEP_SUMMARY"
 
-          echo "Checkov real scan exit code was ${EXIT_CODE}. For the first implementation this is report-only."
-          exit 0
-
       - name: Upload Checkov real report
+        id: upload_checkov_real
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -65,7 +67,7 @@ jobs:
           overwrite: true
 
       - name: Add Checkov real artifact link to summary
-        if: always()
+        if: always() && steps.upload_checkov_real.outcome == 'success'
         shell: bash
         run: |
           {
@@ -75,57 +77,16 @@ jobs:
             echo "[Download Checkov real report](${{ steps.upload_checkov_real.outputs.artifact-url }})"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Comment Checkov real report link
-        if: always() && github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const marker = '<!-- checkov-real-iac-report -->';
-            const artifactUrl = '${{ steps.upload_checkov_real.outputs.artifact-url }}';
-
-            const body = `${marker}
-            ## Checkov real IaC report
-
-            [Download Checkov real IaC artifact](${artifactUrl})
-
-            This report is generated from the real Terraform/OpenTofu modules scan.
-            `;
-
-            const { owner, repo } = context.repo;
-            const issue_number = context.issue.number;
-
-            const comments = await github.rest.issues.listComments({
-              owner,
-              repo,
-              issue_number,
-              per_page: 100
-            });
-
-            const existing = comments.data.find(comment => comment.body && comment.body.includes(marker));
-
-            if (existing) {
-              await github.rest.issues.updateComment({
-                owner,
-                repo,
-                comment_id: existing.id,
-                body
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner,
-                repo,
-                issue_number,
-                body
-              });
-            }
-
   checkov-demo-broken:
     name: Checkov demo broken IaC
-    runs-on: [self-hosted, azure, linux, x64, shared]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       # - name: Install Checkov
       #   shell: bash
@@ -137,27 +98,28 @@ jobs:
       - name: Run Checkov demo scan
         shell: bash
         run: |
-          set +e
+          set -euo pipefail
 
           docker run --rm \
-            -v "$PWD:/repo" \
+            -v "$PWD:/repo:ro" \
             -w /repo \
             bridgecrew/checkov:latest \
             --directory demo/checkov-broken \
             --framework terraform \
             --compact \
             --quiet \
+            --soft-fail \
             --output cli > checkov-demo.txt
 
-          EXIT_CODE=$?
+          bash .github/scripts/checkov-summary.sh \
+            "Checkov demo broken IaC scan" \
+            checkov-demo.txt \
+            checkov-demo-summary.md
 
-          .github/scripts/checkov-summary.sh "Checkov demo broken IaC scan" checkov-demo.txt checkov-demo-summary.md
           cat checkov-demo-summary.md >> "$GITHUB_STEP_SUMMARY"
 
-          echo "Demo scan exit code was ${EXIT_CODE}. This job is intentionally non-blocking."
-          exit 0
-
       - name: Upload Checkov demo report
+        id: upload_checkov_demo
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -169,9 +131,9 @@ jobs:
           compression-level: 9
           if-no-files-found: error
           overwrite: true
-          
+
       - name: Add Checkov demo artifact link to summary
-        if: always()
+        if: always() && steps.upload_checkov_demo.outcome == 'success'
         shell: bash
         run: |
           {
@@ -180,47 +142,3 @@ jobs:
             echo
             echo "[Download Checkov demo report](${{ steps.upload_checkov_demo.outputs.artifact-url }})"
           } >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Comment Checkov demo report link
-        if: always() && github.event_name == 'pull_request'
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const marker = '<!-- checkov-demo-broken-report -->';
-            const artifactUrl = '${{ steps.upload_checkov_demo.outputs.artifact-url }}';
-
-            const body = `${marker}
-            ## Checkov demo broken IaC report
-
-            [Download Checkov demo artifact](${artifactUrl})
-
-            This demo is intentionally insecure so Checkov has findings to report.
-            `;
-
-            const { owner, repo } = context.repo;
-            const issue_number = context.issue.number;
-
-            const comments = await github.rest.issues.listComments({
-              owner,
-              repo,
-              issue_number,
-              per_page: 100
-            });
-
-            const existing = comments.data.find(comment => comment.body && comment.body.includes(marker));
-
-            if (existing) {
-              await github.rest.issues.updateComment({
-                owner,
-                repo,
-                comment_id: existing.id,
-                body
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner,
-                repo,
-                issue_number,
-                body
-              });
-            }

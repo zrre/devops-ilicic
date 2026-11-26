@@ -127,7 +127,30 @@ inputs = {
     ]
 
     private_endpoints = []
-    aks               = []
+    aks = [
+      {
+        name                       = "allow-internet-http"
+        priority                   = 100
+        direction                  = "Inbound"
+        access                     = "Allow"
+        protocol                   = "Tcp"
+        source_port_range          = "*"
+        destination_port_range     = "80"
+        source_address_prefix      = "Internet"
+        destination_address_prefix = "*"
+      },
+      {
+        name                       = "allow-internet-https"
+        priority                   = 110
+        direction                  = "Inbound"
+        access                     = "Allow"
+        protocol                   = "Tcp"
+        source_port_range          = "*"
+        destination_port_range     = "443"
+        source_address_prefix      = "Internet"
+        destination_address_prefix = "*"
+      }
+    ]
   }
 
   tags = local.env.locals.tags

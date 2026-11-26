@@ -49,6 +49,18 @@ resource "azurerm_storage_container" "tfstate" {
   container_access_type = "private"
 }
 
+resource "azurerm_storage_container" "environment" {
+  for_each = var.additional_state_containers
+
+  name                  = each.value
+  storage_account_id    = azurerm_storage_account.tfstate.id
+  container_access_type = "private"
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
 resource "azurerm_management_lock" "tfstate_rg" {
   name       = "lock-tfstate-rg-delete-protection"
   scope      = azurerm_resource_group.this.id

@@ -25,6 +25,13 @@ inputs = {
   storage_account_name   = "stilicicdevopstf"
   storage_container_name = "tfstate"
 
+  additional_state_containers = [
+    "tfstate-test",
+    "tfstate-prod",
+    "tfstate-shared",
+    "tfstate-bootstrap",
+  ]
+
   allowed_public_ips = [
     "77.46.241.175",
     "79.175.106.38",
